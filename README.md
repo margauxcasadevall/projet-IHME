@@ -71,4 +71,4 @@ Les activités de course à pied et de trail utilisent une allure moyenne en **m
 
 Les dates et heures sont interprétées dans le fuseau local du navigateur. Un fuseau horaire propre à chaque sortie n’est pas encore enregistré ; c’est à préciser si les adhérents utilisent plusieurs fuseaux.
 
-Une liste d’attente, la validation des adhésions par un administrateur et l’ajout d’un itinéraire GPS pourront être envisagés dans une prochaine version.
+Une liste d’attente, la validation des adhésions par un administrateur et l’ajout d’un itinéraire GPS (GPX) pourront être envisagés dans une prochaine version.
