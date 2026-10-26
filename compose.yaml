@@ -1,0 +1,48 @@
+services:
+  database:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ihme
+      POSTGRES_USER: ihme
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ihme-local-password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ihme -d ihme"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      PGHOST: database
+      PGPORT: 5432
+      PGDATABASE: ihme
+      PGUSER: ihme
+      PGPASSWORD: ${POSTGRES_PASSWORD:-ihme-local-password}
+      JWT_SECRET: ${JWT_SECRET:-local-development-secret-please-replace-before-sharing}
+    depends_on:
+      database:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8080}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
