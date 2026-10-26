@@ -5,9 +5,7 @@ import {
   Bike,
   CalendarDays,
   Check,
-  Compass,
   Footprints,
-  Leaf,
   Link2,
   LogOut,
   Mountain,
@@ -15,7 +13,6 @@ import {
   Route,
   Search,
   SlidersHorizontal,
-  Sparkles,
   Users,
   X
 } from "lucide-react";
@@ -114,22 +111,19 @@ function AuthScreen({ onLogin, initialError }) {
     <main className="auth-page">
       <div className="auth-art">
         <div className="auth-art-top"><Brand /></div>
-        <div className="sun-disc" />
-        <div className="art-hill art-hill-back" />
-        <div className="art-hill art-hill-front" />
         <div className="art-copy">
-          <span className="eyebrow light"><Sparkles size={14} /> dehors, ensemble</span>
-          <h1>Le meilleur<br />chemin est<br /><em>celui qu’on partage.</em></h1>
-          <p>Des sorties à votre rythme, avec des gens qui aiment prendre l’air.</p>
+          <span className="eyebrow light">IHME · ESPACE ADHÉRENTS</span>
+          <h1>Sorties<br /><em>outdoor.</em></h1>
+          <p>Randonnée, course, trail et vélo entre adhérents.</p>
         </div>
-        <div className="art-caption"><span>PRENDRE L’AIR</span><span>PARTAGER LE CHEMIN</span></div>
+        <div className="art-caption"><span>RANDONNÉE</span><span>COURSE · TRAIL · VÉLO</span></div>
       </div>
       <section className="auth-panel">
         <div className="mobile-brand"><Brand /></div>
         <div className="auth-form-wrap">
-          <span className="eyebrow"><span className="eyebrow-dot" /> LA COMMUNAUTÉ OUTDOOR</span>
-          <h2>{mode === "login" ? "Content de vous revoir." : "Bienvenue dehors."}</h2>
-          <p className="auth-subtitle">{mode === "login" ? "Connectez-vous pour retrouver les prochaines sorties." : "Créez votre compte pour rejoindre les sorties."}</p>
+          <span className="eyebrow"><span className="eyebrow-dot" /> ESPACE ADHÉRENTS</span>
+          <h2>{mode === "login" ? "Connexion" : "Créer un compte"}</h2>
+          <p className="auth-subtitle">{mode === "login" ? "Accédez aux sorties et à vos inscriptions." : "Inscrivez-vous pour accéder aux sorties."}</p>
           <div className="auth-tabs" role="tablist" aria-label="Connexion ou inscription">
             <button className={mode === "login" ? "active" : ""} onClick={() => { setMode("login"); setError(""); }}>Connexion</button>
             <button className={mode === "register" ? "active" : ""} onClick={() => { setMode("register"); setError(""); }}>Créer un compte</button>
@@ -154,7 +148,6 @@ function AuthScreen({ onLogin, initialError }) {
               {busy ? "Un instant…" : mode === "login" ? "Se connecter" : "Créer mon compte"} <ArrowRight size={17} />
             </button>
           </form>
-          <p className="auth-footnote"><Leaf size={14} /> Une communauté, des sorties, de l’air frais.</p>
         </div>
       </section>
     </main>
@@ -209,7 +202,7 @@ function OutingForm({ outing, onClose, onSave }) {
     <div className="modal-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
       <section className="outing-modal" role="dialog" aria-modal="true" aria-labelledby="outing-form-title">
         <div className="modal-head">
-          <div><span className="eyebrow"><span className="eyebrow-dot" /> LA PROCHAINE AVENTURE</span><h2 id="outing-form-title">{outing ? "Modifier la sortie" : "Proposer une sortie"}</h2></div>
+          <div><span className="eyebrow"><span className="eyebrow-dot" /> SORTIES</span><h2 id="outing-form-title">{outing ? "Modifier la sortie" : "Proposer une sortie"}</h2></div>
           <button className="icon-button" onClick={onClose} aria-label="Fermer"><X size={20} /></button>
         </div>
         <form className="outing-form" onSubmit={submit}>
@@ -265,8 +258,7 @@ function OutingCard({ outing, currentUserId, onJoin, onLeave, onEdit, onDelete, 
     <article className="outing-card">
       <div className={`card-art ${activity.tint}`}>
         <span className="activity-pill"><ActivityIcon size={14} /> {activity.label}</span>
-        <span className="art-coordinates">{outing.activity === "cycling" ? "À VÉLO" : outing.activity === "trail" ? "SUR LES SENTIERS" : "PRENDRE L’AIR"}</span>
-        <div className="card-landscape"><span className="landscape-sun" /><span className="landscape-mountain one" /><span className="landscape-mountain two" /><span className="landscape-mountain three" /></div>
+        <span className="art-coordinates">{outing.activity === "cycling" ? "VÉLO" : outing.activity === "trail" ? "TRAIL" : outing.activity === "running" ? "COURSE" : "RANDONNÉE"}</span>
         <div className="card-date"><CalendarDays size={14} /><span>{formatDate(outing.event_date, outing.start_time)}</span></div>
       </div>
       <div className="card-content">
@@ -415,7 +407,7 @@ function App() {
     }
   }
 
-  if (loading) return <div className="loading-screen"><span className="loading-mark"><Leaf size={22} /></span><span>On prépare le terrain…</span></div>;
+  if (loading) return <div className="loading-screen"><span className="loading-mark" /><span>Chargement…</span></div>;
   if (!user) return <AuthScreen onLogin={handleLogin} initialError={error} />;
 
   const nextOuting = outings[0];
@@ -426,32 +418,30 @@ function App() {
       <header className="topbar">
         <div className="topbar-inner">
           <Brand dark />
-          <nav className="main-nav"><a className="nav-active" href="#sorties">Les sorties</a><a href="#concept">L’esprit IHME</a></nav>
+          <nav className="main-nav"><a className="nav-active" href="#sorties">Les sorties</a></nav>
           <div className="user-menu"><div className="user-avatar">{user.fullName.trim().slice(0, 1).toUpperCase()}</div><span className="user-name">{user.fullName}</span><button className="logout-button" onClick={handleLogout} aria-label="Se déconnecter"><LogOut size={17} /></button></div>
         </div>
       </header>
       <main className="page-content">
         <section className="welcome-strip">
-          <div><span className="eyebrow"><span className="eyebrow-dot" /> SORTIES OUTDOOR • ENTRE ADHÉRENTS</span><h1>Un peu plus <em>dehors.</em></h1><p>De belles sorties, de belles rencontres. Choisissez votre prochaine échappée.</p></div>
+          <div><span className="eyebrow"><span className="eyebrow-dot" /> ESPACE ADHÉRENTS</span><h1>Agenda <em>outdoor</em></h1><p>Trouvez une activité et gérez vos inscriptions.</p></div>
           <button className="button button-lime" onClick={() => setModal({ outing: null })}><Plus size={18} /> Proposer une sortie</button>
-          <div className="welcome-sun" /><div className="welcome-ridge ridge-one" /><div className="welcome-ridge ridge-two" />
         </section>
         <div className="dashboard-row">
-          <div className="stats-intro"><span className="eyebrow"><Compass size={14} /> LE CARNET DE SORTIES</span><h2>La prochaine aventure<br />commence <em>ici.</em></h2></div>
+          <div className="stats-intro"><span className="eyebrow">EN UN COUP D’ŒIL</span><h2>Votre activité</h2></div>
           <div className="mini-stat"><span className="mini-icon green"><CalendarDays size={17} /></span><span><strong>{outings.length}</strong><small>sortie{outings.length !== 1 ? "s" : ""} à venir</small></span></div>
           <div className="mini-stat"><span className="mini-icon violet"><Users size={17} /></span><span><strong>{joinedCount}</strong><small>où vous participez</small></span></div>
           {nextOuting && <div className="next-callout"><span className="next-kicker"><span /> À VENIR</span><strong>{nextOuting.title}</strong><span>{formatDate(nextOuting.event_date, nextOuting.start_time)}</span><ArrowRight size={16} /></div>}
         </div>
         <section className="listing-section" id="sorties">
-          <div className="section-heading"><div><span className="eyebrow">FAITES VOTRE CHOIX</span><h2>Les sorties <span className="heading-count">{outings.length.toString().padStart(2, "0")}</span></h2></div><div className="search-wrap"><Search size={17} /><input aria-label="Rechercher une sortie" placeholder="Rechercher une sortie…" value={search} onChange={(event) => setSearch(event.target.value)} /></div></div>
+          <div className="section-heading"><div><span className="eyebrow">SORTIES À VENIR</span><h2>Les sorties <span className="heading-count">{outings.length.toString().padStart(2, "0")}</span></h2></div><div className="search-wrap"><Search size={17} /><input aria-label="Rechercher une sortie" placeholder="Rechercher une sortie…" value={search} onChange={(event) => setSearch(event.target.value)} /></div></div>
           <div className="filter-row"><div className="filter-tabs" role="tablist" aria-label="Filtrer par activité">{filters.map((item) => <button key={item.id} role="tab" aria-selected={filter === item.id} className={filter === item.id ? "filter-active" : ""} onClick={() => setFilter(item.id)}>{item.label}</button>)}</div><span className="sort-label"><SlidersHorizontal size={15} /> Les plus proches d’abord</span></div>
           {error && <div className="global-error" role="alert">{error}<button onClick={() => setError("")} aria-label="Fermer"><X size={15} /></button></div>}
           {visibleOutings.length ? <div className="outing-grid">{visibleOutings.map((outing) => <OutingCard key={outing.id} outing={outing} currentUserId={user.id} busy={busyId === outing.id} onJoin={() => joinOuting(outing.id)} onLeave={() => leaveOuting(outing.id)} onEdit={() => setModal({ outing })} onDelete={() => deleteOuting(outing)} />)}</div> : (
-            <div className="empty-state"><div className="empty-icon"><Mountain size={26} /></div><h3>{search || filter !== "all" ? "Aucune sortie par ici." : "La première sortie n’attend que vous."}</h3><p>{search || filter !== "all" ? "Essayez un autre filtre ou une autre recherche." : "Proposez une aventure et invitez la communauté à vous rejoindre."}</p>{!search && filter === "all" && <button className="button button-dark" onClick={() => setModal({ outing: null })}><Plus size={16} /> Proposer la première sortie</button>}</div>
+            <div className="empty-state"><div className="empty-icon"><Mountain size={26} /></div><h3>{search || filter !== "all" ? "Aucun résultat" : "Aucune sortie à venir"}</h3><p>{search || filter !== "all" ? "Modifiez votre recherche ou choisissez un autre filtre." : "Proposez une sortie pour la rendre visible aux adhérents."}</p>{!search && filter === "all" && <button className="button button-dark" onClick={() => setModal({ outing: null })}><Plus size={16} /> Proposer une sortie</button>}</div>
           )}
         </section>
-        <section className="closing-note" id="concept"><span className="closing-mark"><Leaf size={17} /></span><span><strong>Le bon rythme, c’est le vôtre.</strong> On se retrouve dehors ?</span><span className="closing-note-right">FAIT AVEC CURIOSITÉ <span>✳</span></span></section>
-        <footer className="page-footer"><Brand dark /><span>Projet IHME · Sorties outdoor entre adhérents</span><span className="page-footer-tag">FAIT POUR PRENDRE L’AIR</span></footer>
+        <footer className="page-footer"><Brand dark /><span>Projet IHME · Sorties outdoor entre adhérents</span></footer>
       </main>
       {modal && <OutingForm outing={modal.outing} onClose={() => setModal(null)} onSave={saveOuting} />}
     </div>
