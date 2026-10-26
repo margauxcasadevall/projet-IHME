@@ -13,8 +13,12 @@ import {
   validateRegistration
 } from "./validation.js";
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL doit être défini.");
+const hasDatabaseUrl = Boolean(process.env.DATABASE_URL);
+const hasPostgresSettings = Boolean(
+  process.env.PGHOST && process.env.PGDATABASE && process.env.PGUSER
+);
+if (!hasDatabaseUrl && !hasPostgresSettings) {
+  throw new Error("Configurez DATABASE_URL ou les variables PGHOST, PGDATABASE et PGUSER.");
 }
 if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
   throw new Error("JWT_SECRET doit contenir au moins 32 caractères.");

@@ -18,26 +18,29 @@ Application web de sorties outdoor entre adhérents : randonnée, course à pied
 - **Base de données :** PostgreSQL.
 - **Conteneurisation :** Docker Compose.
 
-## Lancer l’application avec Docker
+## Voir l’application sur son ordinateur
 
-Prérequis : Docker Desktop (ou Docker Engine avec le plugin Compose).
-
-1. À la racine du projet, créer le fichier de configuration local :
+1. Installer **Docker Desktop**, puis l’ouvrir depuis le dossier **Applications**. Attendre que Docker indique qu’il est démarré.
+2. Ouvrir le projet dans VS Code. Dans la barre de menus, choisir **Terminal > Nouveau terminal**.
+3. Dans le terminal en bas de la fenêtre, saisir :
 
    ```sh
    cp .env.example .env
    ```
 
-2. Pour tout usage au-delà d’un essai local, remplacer dans `.env` les valeurs `POSTGRES_PASSWORD` et `JWT_SECRET` par des secrets personnels robustes. Ne pas partager ni committer ce fichier.
-3. Construire et démarrer l’application :
+4. Dans le même terminal, saisir :
 
    ```sh
    docker compose up --build
    ```
 
-4. Ouvrir [http://localhost:8080](http://localhost:8080) et créer un compte.
+   Au premier lancement, Docker prépare les éléments nécessaires ; cela peut prendre quelques minutes. Laisser ce terminal ouvert.
 
-Les données PostgreSQL sont conservées dans un volume Docker lorsque les conteneurs sont arrêtés. Pour arrêter l’application, utiliser `Ctrl+C`, puis `docker compose down`. Le port web peut être changé avec `APP_PORT` dans `.env`.
+5. Ouvrir un navigateur et aller sur [http://localhost:8080](http://localhost:8080). Créer un compte pour essayer l’application.
+
+Pour arrêter l’application, revenir au terminal et appuyer sur **Ctrl+C**. Pour la relancer plus tard, rouvrir le terminal dans le dossier du projet et saisir `docker compose up`.
+
+Docker conserve les données du projet quand on arrête l’application.
 
 ## Lancer en développement sans Docker
 
