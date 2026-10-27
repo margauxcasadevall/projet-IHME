@@ -10,6 +10,15 @@ import urllib.parse
 import urllib.request
 
 
+PUBLIC_ERRORS = {
+    "configuration": "Configuration Docker invalide : demander à l’enseignant de vérifier la configuration serveur.",
+    "registry_auth": "Connexion à GHCR refusée : vérifier les droits du package et le jeton temporaire du workflow.",
+    "image_pull": "Téléchargement impossible : vérifier que le dépôt autorisé correspond au dépôt GitHub, que le digest existe et que le package est accessible.",
+    "unhealthy": "L’application ne démarre pas ou /api/health échoue sur le port 3000. Première version arrêtée ; faire vérifier les journaux serveur par l’enseignant.",
+    "unhealthy_rollback": "L’application ne démarre pas ou /api/health échoue sur le port 3000. Version précédente rétablie ; faire vérifier les journaux serveur par l’enseignant.",
+}
+
+
 def request_deployment(url, token, digest, registry_token=""):
     address = urllib.parse.urlsplit(url)
     if (
@@ -19,7 +28,7 @@ def request_deployment(url, token, digest, registry_token=""):
         or address.password
         or address.query
         or address.fragment
-        or not re.fullmatch(r"/__deploy/p[0-9]{2}", address.path)
+        or not re.fullmatch(r"/__deploy/(suivi|p[0-9]{2})", address.path)
     ):
         raise ValueError("URL HTTPS de déploiement invalide.")
     if not token or not re.fullmatch(r"sha256:[a-f0-9]{64}", digest):
@@ -43,17 +52,31 @@ def request_deployment(url, token, digest, registry_token=""):
         def redirect_request(self, *args):
             return None
 
-    with urllib.request.build_opener(NoRedirect()).open(
-        request, timeout=440
-    ) as response:
-        result = json.load(response)
-        if (
-            response.status != 200
-            or not isinstance(result, dict)
-            or result.get("status") != "healthy"
-        ):
-            raise ValueError("Déploiement refusé ou version non saine.")
-        return result
+    try:
+        with urllib.request.build_opener(NoRedirect()).open(
+            request, timeout=460
+        ) as response:
+            result = json.load(response)
+            if (
+                response.status != 200
+                or not isinstance(result, dict)
+                or result.get("status") != "healthy"
+            ):
+                raise ValueError("Déploiement refusé ou version non saine.")
+            return result
+    except urllib.error.HTTPError as error:
+        message = (
+            f"Échec HTTP {error.code}. "
+            "Consulter l’enseignant pour vérifier les journaux du serveur."
+        )
+        try:
+            payload = json.loads(error.read(4096))
+            code = payload.get("error_code") if isinstance(payload, dict) else None
+            if isinstance(code, str):
+                message = PUBLIC_ERRORS.get(code, message)
+        except (ValueError, OSError):
+            pass
+        raise ValueError(message) from None
 
 
 if __name__ == "__main__":

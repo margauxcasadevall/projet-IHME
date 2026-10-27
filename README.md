@@ -81,7 +81,7 @@ Le workflow transmet `IHME_BASE_PATH` au build Docker. Vite s’en sert pour les
 
 Le service de déploiement attend une image unique qui sert l’API et le frontend compilé sur le port `3000` ; le [Dockerfile](./Dockerfile) construit cette image. L’application locale sous Docker Compose reste composée de trois services.
 
-Après un push sur `main`, vérifier la réussite du workflow **Construire et publier l’image** dans **Actions**. Pour déployer, lancer ce workflow manuellement sur `main`, cocher **Déployer cette version après construction**, puis vérifier l’application à l’URL attribuée. Les fichiers d’accès personnels, dont `acces-*.txt` et `deploy.curl`, sont ignorés par Git et Docker ; ne pas modifier ces règles ni les partager.
+Après un push sur `main`, vérifier la réussite du workflow **Construire et publier l’image** dans **Actions**. Pour déployer, lancer ce workflow manuellement sur `main`, cocher **Déployer cette version après construction**, puis vérifier l’application à l’URL attribuée. En cas de refus HTTP par le serveur, le client affiche un diagnostic générique ou un message explicite si le serveur renvoie un code d’erreur reconnu ; ne jamais ajouter les jetons aux journaux. Les fichiers d’accès personnels, dont `acces-*.txt` et `deploy.curl`, sont ignorés par Git et Docker ; ne pas modifier ces règles ni les partager.
 
 ## Règles de sortie
 

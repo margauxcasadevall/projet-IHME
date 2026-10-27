@@ -1,4 +1,6 @@
 import json
+import urllib.error
+from io import BytesIO
 import unittest
 from unittest.mock import MagicMock, patch
 
@@ -9,12 +11,26 @@ class DeploymentRequestTests(unittest.TestCase):
     def test_requires_secure_url_and_assigned_project(self):
         for url in (
             "http://deploy.example/__deploy/p01",
-            "https://deploy.example/__deploy/suivi",
             "https://deploy.example/__deploy/p1",
             "https://user:pass@deploy.example/__deploy/p01",
         ):
             with self.subTest(url=url), self.assertRaises(ValueError):
                 request_deployment(url, "deployment-token", "sha256:" + "a" * 64)
+
+    def test_accepts_teacher_project_endpoint(self):
+        response = MagicMock()
+        response.status = 200
+        response.read.return_value = b'{"project":"suivi","status":"healthy"}'
+        response.__enter__.return_value = response
+        opener = MagicMock()
+        opener.open.return_value = response
+        with patch("deploy.request.urllib.request.build_opener", return_value=opener):
+            result = request_deployment(
+                "https://deploy.example/__deploy/suivi",
+                "deployment-token",
+                "sha256:" + "a" * 64,
+            )
+        self.assertEqual(result["project"], "suivi")
 
     def test_requires_token_and_sha256_digest(self):
         with self.assertRaises(ValueError):
@@ -52,7 +68,7 @@ class DeploymentRequestTests(unittest.TestCase):
             json.loads(request.data),
             {"digest": result["digest"], "registry_token": "registry-token"},
         )
-        self.assertEqual(opener.open.call_args.kwargs["timeout"], 440)
+        self.assertEqual(opener.open.call_args.kwargs["timeout"], 460)
 
     @patch("deploy.request.urllib.request.build_opener")
     def test_rejects_non_healthy_or_invalid_response(self, build_opener):
@@ -71,6 +87,43 @@ class DeploymentRequestTests(unittest.TestCase):
                     "deployment-token",
                     "sha256:" + "a" * 64,
                 )
+
+    @patch("deploy.request.urllib.request.build_opener")
+    def test_translates_http_error_code_without_exposing_credentials(self, build_opener):
+        cases = (
+            (
+                {"error_code": "registry_auth"},
+                "Connexion à GHCR refusée",
+            ),
+            (
+                {"error_code": "unhealthy"},
+                "L’application ne démarre pas",
+            ),
+            (
+                {"error_code": "unknown"},
+                "Échec HTTP 422",
+            ),
+        )
+        for payload, expected_message in cases:
+            with self.subTest(payload=payload):
+                opener = MagicMock()
+                opener.open.side_effect = urllib.error.HTTPError(
+                    "https://deploy.example/__deploy/p03",
+                    422,
+                    "Unprocessable Entity",
+                    {},
+                    BytesIO(json.dumps(payload).encode()),
+                )
+                build_opener.return_value = opener
+                with self.assertRaisesRegex(ValueError, expected_message) as raised:
+                    request_deployment(
+                        "https://deploy.example/__deploy/p03",
+                        "private-deployment-token",
+                        "sha256:" + "a" * 64,
+                        "private-registry-token",
+                    )
+                self.assertNotIn("private-deployment-token", str(raised.exception))
+                self.assertNotIn("private-registry-token", str(raised.exception))
 
 
 if __name__ == "__main__":
