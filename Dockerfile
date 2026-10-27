@@ -1,6 +1,8 @@
 FROM node:22-alpine AS frontend-build
 
 WORKDIR /app/frontend
+ARG BASE_PATH=/
+ENV BASE_PATH=$BASE_PATH
 COPY frontend/package.json ./
 RUN npm install
 COPY frontend ./

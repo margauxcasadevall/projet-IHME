@@ -46,6 +46,8 @@ jobs:
         with:
           context: .
           platforms: linux/amd64
+          build-args: |
+            BASE_PATH=${{ vars.IHME_BASE_PATH }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           push: true

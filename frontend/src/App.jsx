@@ -54,8 +54,10 @@ const emptyForm = {
   maxParticipants: ""
 };
 
+const appBasePath = import.meta.env.BASE_URL;
+
 async function api(path, options = {}) {
-  const response = await fetch(`/api${path}`, {
+  const response = await fetch(`${appBasePath}api${path}`, {
     ...options,
     credentials: "same-origin",
     headers: {
@@ -168,7 +170,7 @@ function AuthScreen({ onLogin, initialError }) {
 
 function Brand({ dark = false }) {
   return (
-    <a className={`brand ${dark ? "brand-dark" : ""}`} href="/" aria-label="Zou!, accueil">
+    <a className={`brand ${dark ? "brand-dark" : ""}`} href={appBasePath} aria-label="Zou!, accueil">
       <svg className="brand-mark" viewBox="0 0 60 44" aria-hidden="true">
         <path className="brand-z" d="M7 8h45L12 36h41" />
         <g className="brand-people">
@@ -215,7 +217,7 @@ function OutingForm({ outing, onClose, onSave }) {
   useEffect(() => {
     if (!outing?.gpx_is_uploaded) return undefined;
     let active = true;
-    fetch(`/api/outings/${outing.id}/gpx`, { credentials: "same-origin" })
+    fetch(`${appBasePath}api/outings/${outing.id}/gpx`, { credentials: "same-origin" })
       .then(async (response) => {
         if (!response.ok) {
           const result = await response.json();
@@ -367,7 +369,7 @@ function OutingCard({ outing, currentUserId, onJoin, onLeave, onEdit, onDelete, 
   const remaining = Number(outing.max_participants) - Number(outing.participant_count);
   const organizerName = typeof outing.organizer_name === "string" ? outing.organizer_name : "Adhérent";
   const hasUploadedGpx = outing.gpx_is_uploaded;
-  const gpxHref = hasUploadedGpx ? `/api/outings/${outing.id}/gpx` : outing.gpx_url;
+  const gpxHref = hasUploadedGpx ? `${appBasePath}api/outings/${outing.id}/gpx` : outing.gpx_url;
 
   return (
     <article className="outing-card">

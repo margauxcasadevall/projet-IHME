@@ -1,4 +1,6 @@
 .env
+acces-*.txt
+deploy.curl
 .git
 **/node_modules
 **/dist

@@ -71,12 +71,17 @@ Le workflow `ci.yml` vérifie la compilation et construit les images Docker à c
 
 Avant le premier déploiement, l’enseignant doit attribuer un identifiant `pXX`, autoriser le dépôt sur la plateforme et installer les paramètres côté serveur. Dans les paramètres GitHub du dépôt, configurer ensuite :
 
-- la variable `IHME_DEPLOY_URL` avec l’URL HTTPS de déploiement attribuée, au format `https://<serveur>/__deploy/pXX` ;
-- le secret `IHME_DEPLOY_TOKEN` avec le jeton privé fourni par l’enseignant.
+- le secret `IHME_DEPLOY_TOKEN` avec le jeton privé fourni par l’enseignant ;
+- la variable `IHME_DEPLOY_URL` avec l’URL HTTPS de déploiement attribuée, terminée par `/__deploy/pXX` ;
+- la variable `IHME_BASE_PATH` avec le chemin web attribué, avec une barre oblique au début et à la fin (par exemple `/projet-ihme/`).
 
-La plateforme fournit PostgreSQL via `DATABASE_URL` et `PUBLIC_ORIGIN`. Cette application requiert également `JWT_SECRET` (au moins 32 caractères) : l’enseignant doit le fournir au conteneur dans sa configuration de déploiement avant que l’application puisse démarrer. Ne pas mettre ce secret dans le dépôt ni dans les paramètres publics GitHub.
+La plateforme fournit PostgreSQL via `DATABASE_URL`. Cette application requiert également `JWT_SECRET` (au moins 32 caractères) : vérifier auprès de l’enseignant que le serveur le fournit au conteneur avant le premier déploiement. Ne pas mettre ce secret dans le dépôt ni dans les variables GitHub publiques.
 
-Le service de déploiement attend une image unique qui sert l’API et le frontend sur le port `3000` ; le [Dockerfile](./Dockerfile) construit cette image. L’application locale sous Docker Compose reste composée de trois services.
+Le workflow transmet `IHME_BASE_PATH` au build Docker. Vite s’en sert pour les fichiers statiques, l’interface préfixe les appels API avec ce chemin et le proxy le retire avant l’appel à Express. Le pool PostgreSQL est limité à quatre connexions.
+
+Le service de déploiement attend une image unique qui sert l’API et le frontend compilé sur le port `3000` ; le [Dockerfile](./Dockerfile) construit cette image. L’application locale sous Docker Compose reste composée de trois services.
+
+Après un push sur `main`, vérifier la réussite du workflow **Construire et publier l’image** dans **Actions**. Pour déployer, lancer ce workflow manuellement sur `main`, cocher **Déployer cette version après construction**, puis vérifier l’application à l’URL attribuée. Les fichiers d’accès personnels, dont `acces-*.txt` et `deploy.curl`, sont ignorés par Git et Docker ; ne pas modifier ces règles ni les partager.
 
 ## Règles de sortie
 

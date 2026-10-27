@@ -1,4 +1,6 @@
 .env
+acces-*.txt
+deploy.curl
 node_modules/
 dist/
 .DS_Store
