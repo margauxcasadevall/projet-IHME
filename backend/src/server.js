@@ -6,7 +6,12 @@ import bcrypt from "bcryptjs";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import { pool, initializeDatabase } from "./db.js";
-import { clearSessionCookie, requireAuth, setSessionCookie } from "./auth.js";
+import {
+  clearSessionCookie,
+  initializeSessionSecret,
+  requireAuth,
+  setSessionCookie
+} from "./auth.js";
 import {
   isFutureDateTime,
   validateLogin,
@@ -21,10 +26,6 @@ const hasPostgresSettings = Boolean(
 if (!hasDatabaseUrl && !hasPostgresSettings) {
   throw new Error("Configurez DATABASE_URL ou les variables PGHOST, PGDATABASE et PGUSER.");
 }
-if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
-  throw new Error("JWT_SECRET doit contenir au moins 32 caractères.");
-}
-
 const app = express();
 const port = Number(process.env.PORT || 3000);
 const frontendDirectory = fileURLToPath(new URL("../../frontend/dist/", import.meta.url));
@@ -431,6 +432,7 @@ app.use((error, _request, response, _next) => {
 });
 
 await initializeDatabase();
+await initializeSessionSecret();
 app.listen(port, "0.0.0.0", () => {
   console.log(`Application projet IHME prête sur le port ${port}.`);
 });

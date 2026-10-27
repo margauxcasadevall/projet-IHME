@@ -75,9 +75,9 @@ Avant le premier déploiement, l’enseignant doit attribuer un identifiant `pXX
 - la variable `IHME_DEPLOY_URL` avec l’URL HTTPS de déploiement attribuée, terminée par `/__deploy/pXX` ;
 - la variable `IHME_BASE_PATH` avec le chemin web attribué, avec une barre oblique au début et à la fin (par exemple `/projet-ihme/`).
 
-La plateforme fournit PostgreSQL via `DATABASE_URL`. Cette application requiert également `JWT_SECRET` (au moins 32 caractères) : vérifier auprès de l’enseignant que le serveur le fournit au conteneur avant le premier déploiement. Ne pas mettre ce secret dans le dépôt ni dans les variables GitHub publiques.
+La plateforme fournit PostgreSQL via `DATABASE_URL`. Si `JWT_SECRET` n’est pas fourni au conteneur, l’application génère une clé aléatoire et la conserve dans la table `app_secrets` de cette base. La base et ses sauvegardes doivent donc être conservées pour que les sessions restent valides après un redémarrage. Un `JWT_SECRET` fourni par l’environnement, d’au moins 32 caractères, reste prioritaire. Ne jamais mettre ce secret dans le dépôt ni dans les variables GitHub publiques.
 
-Le workflow transmet `IHME_BASE_PATH` au build Docker. Vite s’en sert pour les fichiers statiques, l’interface préfixe les appels API avec ce chemin et le proxy le retire avant l’appel à Express. Le pool PostgreSQL est limité à quatre connexions.
+Le workflow transmet `IHME_BASE_PATH` au build Docker. Vite s’en sert pour les fichiers statiques, l’interface préfixe les appels API avec ce chemin et le proxy le retire avant l’appel à Express. Le pool PostgreSQL est limité à quatre connexions. Le PostgreSQL de Docker Compose est destiné au développement local ; le serveur utilise sa propre base fournie par `DATABASE_URL`.
 
 Le service de déploiement attend une image unique qui sert l’API et le frontend compilé sur le port `3000` ; le [Dockerfile](./Dockerfile) construit cette image. L’application locale sous Docker Compose reste composée de trois services.
 
