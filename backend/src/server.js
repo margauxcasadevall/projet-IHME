@@ -38,8 +38,12 @@ const authLimiter = rateLimit({
 
 app.disable("x-powered-by");
 app.use(helmet());
-app.use(express.json({ limit: "20kb" }));
+app.use(express.json({ limit: "2200kb" }));
 app.use(cookieParser());
+app.use("/api", (_request, response, next) => {
+  response.set("Cache-Control", "no-store");
+  next();
+});
 
 app.get("/api/health", async (_request, response, next) => {
   try {
@@ -124,7 +128,10 @@ app.get("/api/outings", requireAuth, async (request, response, next) => {
   try {
     const result = await pool.query(
       `SELECT o.id, o.organizer_id, o.title, o.activity, o.route_description,
-              o.route_url, o.distance_km, o.event_date, o.start_time,
+              o.route_url, o.meeting_place, o.meeting_maps_url, o.gpx_url,
+              (o.gpx_content IS NOT NULL) AS gpx_is_uploaded,
+              o.elevation_gain_m, o.elevation_loss_m,
+              o.distance_km, o.event_date, o.start_time,
               o.average_speed, o.max_participants, o.created_at,
               u.full_name AS organizer_name,
               COUNT(p.user_id)::int AS participant_count,
@@ -143,6 +150,28 @@ app.get("/api/outings", requireAuth, async (request, response, next) => {
   }
 });
 
+app.get("/api/outings/:id/gpx", requireAuth, async (request, response, next) => {
+  const id = Number(request.params.id);
+  if (!Number.isSafeInteger(id) || id < 1) {
+    return response.status(400).json({ error: "Sortie invalide." });
+  }
+  try {
+    const result = await pool.query(
+      "SELECT gpx_content FROM outings WHERE id = $1 AND gpx_content IS NOT NULL",
+      [id]
+    );
+    if (result.rowCount === 0) {
+      return response.status(404).json({ error: "Aucun fichier GPX n’est associé à cette sortie." });
+    }
+    return response
+      .type("application/gpx+xml")
+      .attachment("trace.gpx")
+      .send(result.rows[0].gpx_content);
+  } catch (error) {
+    return next(error);
+  }
+});
+
 app.post("/api/outings", requireAuth, async (request, response, next) => {
   const validation = validateOuting(request.body);
   if (validation.error) return response.status(400).json({ error: validation.error });
@@ -154,9 +183,10 @@ app.post("/api/outings", requireAuth, async (request, response, next) => {
     await client.query("BEGIN");
     const result = await client.query(
       `INSERT INTO outings
-         (organizer_id, title, activity, route_description, route_url, distance_km,
-          event_date, start_time, average_speed, max_participants)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+         (organizer_id, title, activity, route_description, route_url, meeting_place,
+          meeting_maps_url, gpx_url, gpx_content, elevation_gain_m, elevation_loss_m,
+          distance_km, event_date, start_time, average_speed, max_participants)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
        RETURNING id`,
       [
         request.user.id,
@@ -164,6 +194,12 @@ app.post("/api/outings", requireAuth, async (request, response, next) => {
         outing.activity,
         outing.routeDescription,
         outing.routeUrl,
+        outing.meetingPlace,
+        outing.meetingMapsUrl,
+        outing.gpxUrl,
+        outing.gpxContent,
+        outing.elevationGainM,
+        outing.elevationLossM,
         outing.distanceKm,
         outing.date,
         outing.time,
@@ -223,14 +259,22 @@ app.patch("/api/outings/:id", requireAuth, async (request, response, next) => {
     await client.query(
       `UPDATE outings
        SET title = $1, activity = $2, route_description = $3, route_url = $4,
-           distance_km = $5, event_date = $6, start_time = $7,
-           average_speed = $8, max_participants = $9
-       WHERE id = $10`,
+           meeting_place = $5, meeting_maps_url = $6, gpx_url = $7,
+           gpx_content = $8, elevation_gain_m = $9, elevation_loss_m = $10,
+           distance_km = $11, event_date = $12, start_time = $13,
+           average_speed = $14, max_participants = $15
+       WHERE id = $16`,
       [
         outing.title,
         outing.activity,
         outing.routeDescription,
         outing.routeUrl,
+        outing.meetingPlace,
+        outing.meetingMapsUrl,
+        outing.gpxUrl,
+        outing.gpxContent,
+        outing.elevationGainM,
+        outing.elevationLossM,
         outing.distanceKm,
         outing.date,
         outing.time,

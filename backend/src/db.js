@@ -23,6 +23,12 @@ export async function initializeDatabase() {
       activity VARCHAR(20) NOT NULL CHECK (activity IN ('hiking', 'running', 'trail', 'cycling')),
       route_description TEXT NOT NULL,
       route_url TEXT,
+      meeting_place TEXT NOT NULL DEFAULT '',
+      meeting_maps_url TEXT NOT NULL DEFAULT '',
+      gpx_url TEXT,
+      gpx_content TEXT,
+      elevation_gain_m INTEGER CHECK (elevation_gain_m BETWEEN 0 AND 100000),
+      elevation_loss_m INTEGER CHECK (elevation_loss_m BETWEEN 0 AND 100000),
       distance_km NUMERIC(7, 2) NOT NULL CHECK (distance_km > 0),
       event_date DATE NOT NULL,
       start_time TIME NOT NULL,
@@ -30,6 +36,15 @@ export async function initializeDatabase() {
       max_participants INTEGER NOT NULL CHECK (max_participants > 0),
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
+
+    ALTER TABLE outings ADD COLUMN IF NOT EXISTS meeting_place TEXT NOT NULL DEFAULT '';
+    ALTER TABLE outings ADD COLUMN IF NOT EXISTS meeting_maps_url TEXT NOT NULL DEFAULT '';
+    ALTER TABLE outings ADD COLUMN IF NOT EXISTS gpx_url TEXT;
+    ALTER TABLE outings ADD COLUMN IF NOT EXISTS gpx_content TEXT;
+    ALTER TABLE outings ADD COLUMN IF NOT EXISTS elevation_gain_m INTEGER
+      CHECK (elevation_gain_m BETWEEN 0 AND 100000);
+    ALTER TABLE outings ADD COLUMN IF NOT EXISTS elevation_loss_m INTEGER
+      CHECK (elevation_loss_m BETWEEN 0 AND 100000);
 
     CREATE TABLE IF NOT EXISTS outing_participants (
       outing_id BIGINT NOT NULL REFERENCES outings(id) ON DELETE CASCADE,

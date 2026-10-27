@@ -1,6 +1,6 @@
-# Projet IHME
+# Zou! — sorties outdoor
 
-Application web de sorties outdoor entre adhérents : randonnée, course à pied, trail et vélo. Chaque membre peut proposer une sortie et les autres peuvent s’y inscrire dans la limite des places disponibles.
+Application web Zou! de sorties outdoor entre adhérents : randonnée, course à pied, trail et vélo. Chaque membre peut proposer une sortie et les autres peuvent s’y inscrire dans la limite des places disponibles.
 
 ## Fonctionnalités
 
@@ -8,7 +8,7 @@ Application web de sorties outdoor entre adhérents : randonnée, course à pied
 - Consultation des sorties à venir, avec recherche par mot-clé et filtres par activité.
 - Création, modification et annulation de ses propres sorties.
 - Inscription et désinscription aux sorties ; l’organisateur compte parmi les participants.
-- Affichage de la date, de l’heure, de l’itinéraire, de la distance, de l’allure et des places disponibles.
+- Affichage de la date, de l’heure, du point de rendez-vous, du tracé GPX, de la distance, de l’allure et des places disponibles.
 - Capacité maximale définie par l’organisateur. Une sortie complète ne peut plus recevoir d’inscriptions ; la liste d’attente n’est pas encore incluse.
 
 ## Technologies
@@ -80,8 +80,8 @@ Le service de déploiement attend une image unique qui sert l’API et le fronte
 
 ## Règles de sortie
 
-Les activités de course à pied et de trail utilisent une allure moyenne en **min/km**. La randonnée et le vélo utilisent une vitesse moyenne en **km/h**. Chaque sortie comprend un titre, une description d’itinéraire, une distance, une date, une heure de rendez-vous, une allure ou vitesse moyenne et un nombre maximum de participants. Le lien vers une carte est facultatif.
+Les activités de course à pied et de trail utilisent une allure moyenne en **min/km**. La randonnée et le vélo utilisent une vitesse moyenne en **km/h**. Chaque sortie comprend un titre, une activité, un point de rendez-vous avec un lien Google Maps, une distance, une date, une heure, une allure ou vitesse moyenne et un nombre maximum de participants. La description complémentaire, le tracé GPX (fichier téléversé ou lien), et les dénivelés positif et négatif sont facultatifs.
 
 Les dates et heures sont interprétées dans le fuseau local du navigateur. Un fuseau horaire propre à chaque sortie n’est pas encore enregistré ; c’est à préciser si les adhérents utilisent plusieurs fuseaux.
 
-Une liste d’attente, la validation des adhésions par un administrateur et l’ajout d’un itinéraire GPS (GPX) pourront être envisagés dans une prochaine version.
+Une liste d’attente et la validation des adhésions par un administrateur pourront être envisagées dans une prochaine version.

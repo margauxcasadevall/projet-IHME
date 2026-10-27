@@ -21,13 +21,15 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 
 .brand { display: inline-flex; align-items: center; gap: 9px; text-decoration: none; color: white; position: relative; z-index: 2; }
 .brand-dark { color: var(--pine-deep); }
-.brand-mark { width: 27px; height: 26px; display: flex; align-items: flex-end; gap: 2px; transform: skewY(-22deg); }
-.brand-mark span { display: block; width: 7px; border-radius: 2px 2px 0 0; background: var(--lime); }
-.brand-mark span:nth-child(1) { height: 14px; opacity: .72; }
-.brand-mark span:nth-child(2) { height: 23px; }
-.brand-mark span:nth-child(3) { height: 18px; opacity: .86; }
-.brand-word { font: 800 28px/1 "Manrope", sans-serif; letter-spacing: -2px; }
+.brand-mark { width: 39px; height: 31px; overflow: visible; flex: 0 0 auto; }
+.brand-z { fill: none; stroke: var(--lime); stroke-width: 5; stroke-linecap: square; stroke-linejoin: bevel; }
+.brand-people { fill: none; stroke: var(--pine-deep); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.brand-people circle { fill: var(--pine-deep); stroke: none; }
+.brand-word { font: 800 28px/1 "Manrope", sans-serif; letter-spacing: -1.5px; }
 .brand-word > span { color: var(--lime); }
+.brand-dark .brand-z { stroke: #788a40; }
+.brand-dark .brand-people { stroke: var(--pine-deep); }
+.brand-dark .brand-people circle { fill: var(--pine-deep); }
 .brand-dark .brand-word > span { color: #788a40; }
 .button { min-height: 44px; padding: 0 17px; display: inline-flex; align-items: center; justify-content: center; gap: 9px; border: 0; border-radius: 6px; font-size: 13px; font-weight: 700; transition: background-color .18s ease, color .18s ease, transform .18s ease; }
 .button:disabled { opacity: .52; cursor: not-allowed; }
@@ -148,9 +150,16 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .outing-organizer { margin-top: 9px; display: flex; align-items: center; gap: 8px; color: #747a70; font-size: 10px; }
 .outing-organizer strong { color: #4a5549; font-weight: 600; }
 .avatar { width: 24px; height: 24px; font-size: 10px; }
+.meeting-point { margin-top: 13px; padding: 9px 10px; display: flex; align-items: flex-start; gap: 8px; border-radius: 5px; color: #687a3f; background: #f2f4ec; }
+.meeting-point > svg { flex: 0 0 auto; margin-top: 1px; }
+.meeting-point > span { display: flex; flex-direction: column; gap: 4px; color: #374137; font-size: 10px; line-height: 1.4; }
+.meeting-point a { display: inline-flex; align-items: center; gap: 4px; color: #5f7132; text-decoration: none; font-size: 9px; font-weight: 700; }
+.meeting-point a:hover { color: #3c4c1c; }
 .route-summary { height: 39px; overflow: hidden; margin: 13px 0 3px; color: #666e64; font-size: 11px; line-height: 1.65; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .route-link { display: inline-flex; align-items: center; gap: 5px; margin: 3px 0 8px; color: #5f7132; text-decoration: none; font-size: 10px; font-weight: 700; }
 .route-link:hover { color: #3c4c1c; }
+.outing-elevation { padding: 0 0 11px; display: flex; gap: 13px; color: #687a3f; font-size: 10px; font-weight: 700; }
+.outing-elevation span { display: inline-flex; align-items: center; gap: 4px; }
 .card-stats { display: grid; grid-template-columns: 1fr 1.3fr .9fr; gap: 6px; padding: 13px 0; border-top: 1px solid #eceee8; }
 .card-stats > div { display: flex; align-items: center; gap: 7px; color: #747a70; }
 .card-stats > div > svg { flex: 0 0 auto; color: #78884a; }
@@ -173,7 +182,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .global-error button { display: grid; place-items: center; color: #934f45; border: 0; background: transparent; }
 .page-footer { min-height: 55px; display: flex; align-items: center; gap: 16px; border-top: 1px solid var(--line); }
 .page-footer .brand-word { font-size: 20px; }
-.page-footer .brand-mark { width: 20px; height: 20px; transform: scale(.8) skewY(-22deg); }
+.page-footer .brand-mark { width: 30px; height: 25px; }
 .page-footer > span { color: #858b80; font-size: 10px; }
 
 .modal-backdrop { position: fixed; z-index: 10; inset: 0; padding: 22px; display: grid; place-items: center; overflow-y: auto; background: #17231dcc; backdrop-filter: blur(3px); }
@@ -183,8 +192,11 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .outing-form { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 12px; }
 .outing-form label { gap: 6px; }
 .outing-form input, .outing-form select { height: 39px; padding: 0 10px; font-size: 11px; }
+.outing-form input[type="file"] { height: auto; min-height: 39px; padding: 8px; }
 .outing-form textarea { min-height: 78px; padding: 10px; resize: vertical; font-size: 11px; line-height: 1.5; }
 .field-wide { grid-column: 1 / -1; }
+.form-section-title { margin-top: 5px; padding-bottom: 8px; display: flex; align-items: center; gap: 7px; color: #354336; border-bottom: 1px solid #e9ece5; font-size: 12px; font-weight: 700; }
+.form-section-title svg { color: #78884a; }
 .optional { margin-left: 4px; color: #a0a69e; font-size: 9px; font-weight: 400; }
 .input-suffix { display: flex; align-items: center; overflow: hidden; border: 1px solid #dfe2da; border-radius: 6px; background: white; }
 .input-suffix:focus-within { border-color: #89994c; box-shadow: 0 0 0 3px #c8d96a45; }
@@ -260,7 +272,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 @media (max-width: 420px) {
   .main-nav { margin-left: 17px; gap: 12px; }
   .main-nav a { font-size: 8px; }
-  .brand-mark { transform: scale(.88) skewY(-22deg); }
+  .brand-mark { width: 34px; height: 28px; }
   .brand-word { font-size: 24px; }
   .topbar .brand-word { font-size: 22px; }
   .welcome-strip .eyebrow { font-size: 8px; }

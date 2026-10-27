@@ -1,13 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   ArrowDownUp,
+  ArrowDown,
   ArrowRight,
+  ArrowUp,
   Bike,
   CalendarDays,
   Check,
+  Download,
   Footprints,
   Link2,
   LogOut,
+  MapPin,
   Mountain,
   Plus,
   Route,
@@ -37,6 +41,12 @@ const emptyForm = {
   activity: "hiking",
   routeDescription: "",
   routeUrl: "",
+  meetingPlace: "",
+  meetingMapsUrl: "",
+  gpxUrl: "",
+  gpxContent: "",
+  elevationGainM: "",
+  elevationLossM: "",
   distanceKm: "",
   date: "",
   time: "",
@@ -64,7 +74,9 @@ async function api(path, options = {}) {
 }
 
 function formatDate(date, time) {
-  const parsed = new Date(`${date}T${time}`);
+  const datePart = String(date).slice(0, 10);
+  const timePart = String(time).slice(0, 5);
+  const parsed = new Date(`${datePart}T${timePart}`);
   return new Intl.DateTimeFormat("fr-FR", {
     weekday: "long",
     day: "numeric",
@@ -112,7 +124,7 @@ function AuthScreen({ onLogin, initialError }) {
       <div className="auth-art">
         <div className="auth-art-top"><Brand /></div>
         <div className="art-copy">
-          <span className="eyebrow light">IHME · ESPACE ADHÉRENTS</span>
+          <span className="eyebrow light">ZOU! · ESPACE ADHÉRENTS</span>
           <h1>Sorties<br /><em>outdoor.</em></h1>
           <p>Randonnée, course, trail et vélo entre adhérents.</p>
         </div>
@@ -156,9 +168,22 @@ function AuthScreen({ onLogin, initialError }) {
 
 function Brand({ dark = false }) {
   return (
-    <a className={`brand ${dark ? "brand-dark" : ""}`} href="/" aria-label="IHME, accueil">
-      <span className="brand-mark"><span /><span /><span /></span>
-      <span className="brand-word">ihme<span>.</span></span>
+    <a className={`brand ${dark ? "brand-dark" : ""}`} href="/" aria-label="Zou!, accueil">
+      <svg className="brand-mark" viewBox="0 0 60 44" aria-hidden="true">
+        <path className="brand-z" d="M7 8h45L12 36h41" />
+        <g className="brand-people">
+          <circle cx="19" cy="14" r="2.1" />
+          <path d="m18 17 3 3-2 4m-1-5-3 3m5-2 4 1m-6 3-2 4m4-4 3 3" />
+          <circle cx="35" cy="23" r="2" />
+          <path d="m34 25 3 2-1 4m-2-4-4 2m4-2 4-2" />
+          <circle cx="29" cy="33" r="3" />
+          <circle cx="40" cy="33" r="3" />
+          <path d="m29 33 4-6 4 6h-8l3-4 4 4m-2-7 3 1" />
+          <circle cx="46" cy="28" r="1.8" />
+          <path d="m45 30 1 4m-1-3-3 2m4-1 3 2m-3 0-2 3m3-3 3 2" />
+        </g>
+      </svg>
+      <span className="brand-word">Zou<span>!</span></span>
     </a>
   );
 }
@@ -167,25 +192,67 @@ function OutingForm({ outing, onClose, onSave }) {
   const [form, setForm] = useState(outing ? {
     title: outing.title,
     activity: outing.activity,
-    routeDescription: outing.route_description,
+    routeDescription: outing.route_description || "",
     routeUrl: outing.route_url || "",
+    meetingPlace: outing.meeting_place || "",
+    meetingMapsUrl: outing.meeting_maps_url || "",
+    gpxUrl: outing.gpx_url || "",
+    gpxContent: "",
+    elevationGainM: outing.elevation_gain_m ?? "",
+    elevationLossM: outing.elevation_loss_m ?? "",
     distanceKm: outing.distance_km,
     date: String(outing.event_date).slice(0, 10),
     time: String(outing.start_time).slice(0, 5),
     averageSpeed: outing.average_speed,
     maxParticipants: outing.max_participants
   } : emptyForm);
+  const [gpxFileName, setGpxFileName] = useState("");
+  const [gpxLoadFailed, setGpxLoadFailed] = useState(false);
   const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
-  const selectedActivity = activities[form.activity];
+  const [busy, setBusy] = useState(Boolean(outing?.gpx_is_uploaded));
+  const selectedActivity = activities[form.activity] || activities.hiking;
+
+  useEffect(() => {
+    if (!outing?.gpx_is_uploaded) return undefined;
+    let active = true;
+    fetch(`/api/outings/${outing.id}/gpx`, { credentials: "same-origin" })
+      .then(async (response) => {
+        if (!response.ok) {
+          const result = await response.json();
+          throw new Error(result.error || "Impossible de charger le fichier GPX.");
+        }
+        return response.text();
+      })
+      .then((content) => {
+        if (!active) return;
+        setForm((current) => ({ ...current, gpxContent: content }));
+        setGpxFileName("Tracé GPX actuel");
+      })
+      .catch((requestError) => {
+        if (active) {
+          setGpxLoadFailed(true);
+          setError(requestError.message);
+        }
+      })
+      .finally(() => {
+        if (active) setBusy(false);
+      });
+    return () => { active = false; };
+  }, [outing]);
 
   async function submit(event) {
     event.preventDefault();
+    if (gpxLoadFailed) {
+      setError("Le tracé GPX actuel n’a pas pu être chargé. Supprimez-le ou sélectionnez un autre tracé avant d’enregistrer.");
+      return;
+    }
     setBusy(true);
     setError("");
     try {
       await onSave({
         ...form,
+        routeDescription: form.routeDescription.trim(),
+        gpxContent: form.gpxContent.trim(),
         distanceKm: Number(form.distanceKm),
         averageSpeed: Number(form.averageSpeed),
         maxParticipants: Number(form.maxParticipants),
@@ -214,11 +281,56 @@ function OutingForm({ outing, onClose, onSave }) {
               {Object.entries(activities).map(([key, item]) => <option key={key} value={key}>{item.label}</option>)}
             </select>
           </label>
-          <label className="field-wide">Itinéraire
-            <textarea required minLength="3" maxLength="5000" rows="3" placeholder="Décrivez le parcours et le point de rendez-vous…" value={form.routeDescription} onChange={(event) => setForm({ ...form, routeDescription: event.target.value })} />
+          <div className="form-section-title field-wide"><MapPin size={16} /><span>Point de rendez-vous</span></div>
+          <label>Lieu
+            <input required minLength="2" maxLength="300" placeholder="Ex. Parking de Luminy, Marseille" value={form.meetingPlace} onChange={(event) => setForm({ ...form, meetingPlace: event.target.value })} />
           </label>
-          <label className="field-wide">Lien vers une carte <span className="optional">facultatif</span>
-            <input type="url" placeholder="https://" value={form.routeUrl} onChange={(event) => setForm({ ...form, routeUrl: event.target.value })} />
+          <label>Lien Google Maps
+            <input required type="url" placeholder="https://maps.google.com/…" value={form.meetingMapsUrl} onChange={(event) => setForm({ ...form, meetingMapsUrl: event.target.value })} />
+          </label>
+          <label className="field-wide">Description / informations supplémentaires <span className="optional">facultatif</span>
+            <textarea maxLength="5000" rows="3" placeholder="Détails utiles sur le parcours, le matériel ou l’organisation…" value={form.routeDescription} onChange={(event) => setForm({ ...form, routeDescription: event.target.value })} />
+          </label>
+          <div className="form-section-title field-wide"><Route size={16} /><span>Tracé GPX</span><span className="optional">facultatif</span></div>
+          <label>Fichier GPX
+            <input type="file" accept=".gpx,application/gpx+xml,application/xml,text/xml" onChange={async (event) => {
+              const file = event.target.files?.[0];
+              if (!file) return;
+              if (file.size > 1024 * 1024) {
+                setError("Le fichier GPX ne peut pas dépasser 1 Mo.");
+                event.target.value = "";
+                return;
+              }
+              try {
+                const content = await file.text();
+                setForm({ ...form, gpxContent: content, gpxUrl: "" });
+                setGpxFileName(file.name);
+                setGpxLoadFailed(false);
+                setError("");
+              } catch {
+                setError("Impossible de lire ce fichier GPX.");
+              }
+            }} />
+            {outing?.gpx_is_uploaded && !gpxFileName && <small>Chargement du tracé GPX actuel…</small>}
+            {gpxFileName && <small>Fichier sélectionné : {gpxFileName}</small>}
+          </label>
+          <label>Lien vers un fichier GPX
+            <input type="url" placeholder="https://…" value={form.gpxUrl} onChange={(event) => {
+              setForm({ ...form, gpxUrl: event.target.value, gpxContent: "" });
+              setGpxFileName("");
+              setGpxLoadFailed(false);
+            }} />
+          </label>
+          {(form.gpxUrl || form.gpxContent || outing?.gpx_is_uploaded) && <button type="button" className="button button-delete field-wide" onClick={() => {
+            setForm({ ...form, gpxUrl: "", gpxContent: "" });
+            setGpxFileName("");
+            setGpxLoadFailed(false);
+          }}>Supprimer le tracé GPX</button>}
+          <label>Dénivelé positif <span className="optional">facultatif</span>
+            <span className="input-suffix"><input type="number" min="0" max="100000" step="1" placeholder="500" value={form.elevationGainM} onChange={(event) => setForm({ ...form, elevationGainM: event.target.value })} /><span>m</span></span>
+          </label>
+          <label>Dénivelé négatif <span className="optional">facultatif</span>
+            <span className="input-suffix"><input type="number" min="0" max="100000" step="1" placeholder="500" value={form.elevationLossM} onChange={(event) => setForm({ ...form, elevationLossM: event.target.value })} /><span>m</span></span>
           </label>
           <label>Distance
             <span className="input-suffix"><input required type="number" min="0.1" step="0.1" max="99999" placeholder="12" value={form.distanceKm} onChange={(event) => setForm({ ...form, distanceKm: event.target.value })} /><span>km</span></span>
@@ -253,6 +365,9 @@ function OutingCard({ outing, currentUserId, onJoin, onLeave, onEdit, onDelete, 
   const isOrganizer = Number(outing.organizer_id) === Number(currentUserId);
   const full = Number(outing.participant_count) >= Number(outing.max_participants);
   const remaining = Number(outing.max_participants) - Number(outing.participant_count);
+  const organizerName = typeof outing.organizer_name === "string" ? outing.organizer_name : "Adhérent";
+  const hasUploadedGpx = outing.gpx_is_uploaded;
+  const gpxHref = hasUploadedGpx ? `/api/outings/${outing.id}/gpx` : outing.gpx_url;
 
   return (
     <article className="outing-card">
@@ -263,14 +378,29 @@ function OutingCard({ outing, currentUserId, onJoin, onLeave, onEdit, onDelete, 
       </div>
       <div className="card-content">
         <div className="card-title-row"><h3>{outing.title}</h3>{isOrganizer && <button className="more-button" onClick={onEdit} aria-label="Modifier la sortie"><SlidersHorizontal size={17} /></button>}</div>
-        <div className="outing-organizer"><span className="avatar">{outing.organizer_name.trim().slice(0, 1).toUpperCase()}</span><span>Proposée par <strong>{isOrganizer ? "vous" : outing.organizer_name}</strong></span></div>
-        <p className="route-summary">{outing.route_description}</p>
-        {outing.route_url && <a className="route-link" href={outing.route_url} target="_blank" rel="noreferrer"><Link2 size={14} /> Voir l’itinéraire <ArrowRight size={13} /></a>}
+        <div className="outing-organizer"><span className="avatar">{organizerName.trim().slice(0, 1).toUpperCase()}</span><span>Proposée par <strong>{isOrganizer ? "vous" : organizerName}</strong></span></div>
+        {(outing.meeting_place || outing.meeting_maps_url) && (
+          <div className="meeting-point">
+            <MapPin size={15} />
+            <span><strong>{outing.meeting_place || "Point de rendez-vous"}</strong>
+              {outing.meeting_maps_url && <a href={outing.meeting_maps_url} target="_blank" rel="noreferrer">Ouvrir dans Google Maps <ArrowRight size={12} /></a>}
+            </span>
+          </div>
+        )}
+        {outing.route_description && <p className="route-summary">{outing.route_description}</p>}
+        {outing.route_url && <a className="route-link" href={outing.route_url} target="_blank" rel="noreferrer"><Link2 size={14} /> Ancien lien cartographique <ArrowRight size={13} /></a>}
+        {gpxHref && <a className="route-link" href={gpxHref} target={hasUploadedGpx ? undefined : "_blank"} rel={hasUploadedGpx ? undefined : "noreferrer"}><Download size={14} /> Télécharger le tracé GPX <ArrowRight size={13} /></a>}
         <div className="card-stats">
           <div><Route size={16} /><span><strong>{Number(outing.distance_km).toLocaleString("fr-FR")} km</strong><small>distance</small></span></div>
           <div><ArrowDownUp size={16} /><span><strong>{Number(outing.average_speed).toLocaleString("fr-FR")} {activity.speed}</strong><small>allure moyenne</small></span></div>
           <div><Users size={16} /><span><strong>{outing.participant_count}/{outing.max_participants}</strong><small>participants</small></span></div>
         </div>
+        {(outing.elevation_gain_m != null || outing.elevation_loss_m != null) && (
+          <div className="outing-elevation">
+            {outing.elevation_gain_m != null && <span><ArrowUp size={13} /> +{outing.elevation_gain_m} m</span>}
+            {outing.elevation_loss_m != null && <span><ArrowDown size={13} /> −{outing.elevation_loss_m} m</span>}
+          </div>
+        )}
         <div className="card-footer">
           <span className={`spots ${full ? "spots-full" : remaining <= 3 ? "spots-low" : ""}`}>
             <span className="spot-dot" />{full ? "Complet" : `${remaining} place${remaining > 1 ? "s" : ""} disponible${remaining > 1 ? "s" : ""}`}
@@ -354,7 +484,11 @@ function App() {
       await api("/outings", { method: "POST", body: JSON.stringify(form) });
     }
     setModal(null);
-    await loadOutings();
+    try {
+      await loadOutings();
+    } catch (requestError) {
+      setError(`La sortie a été enregistrée, mais la liste n’a pas pu être actualisée : ${requestError.message}`);
+    }
   }
 
   async function joinOuting(id) {
@@ -441,7 +575,7 @@ function App() {
             <div className="empty-state"><div className="empty-icon"><Mountain size={26} /></div><h3>{search || filter !== "all" ? "Aucun résultat" : "Aucune sortie à venir"}</h3><p>{search || filter !== "all" ? "Modifiez votre recherche ou choisissez un autre filtre." : "Proposez une sortie pour la rendre visible aux adhérents."}</p>{!search && filter === "all" && <button className="button button-dark" onClick={() => setModal({ outing: null })}><Plus size={16} /> Proposer une sortie</button>}</div>
           )}
         </section>
-        <footer className="page-footer"><Brand dark /><span>Projet IHME · Sorties outdoor entre adhérents</span></footer>
+        <footer className="page-footer"><Brand dark /><span>Sorties outdoor entre adhérents</span></footer>
       </main>
       {modal && <OutingForm outing={modal.outing} onClose={() => setModal(null)} onSave={saveOuting} />}
     </div>
