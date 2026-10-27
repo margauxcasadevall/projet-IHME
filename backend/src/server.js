@@ -1,5 +1,6 @@
 import "dotenv/config";
 import express from "express";
+import { fileURLToPath } from "node:url";
 import cookieParser from "cookie-parser";
 import bcrypt from "bcryptjs";
 import helmet from "helmet";
@@ -26,6 +27,7 @@ if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
+const frontendDirectory = fileURLToPath(new URL("../../frontend/dist/", import.meta.url));
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 20,
@@ -365,6 +367,13 @@ app.delete("/api/outings/:id/participants/me", requireAuth, async (request, resp
   }
 });
 
+app.use(express.static(frontendDirectory));
+app.get(/^(?!\/api(?:\/|$)).*/, (_request, response, next) => {
+  response.sendFile("index.html", { root: frontendDirectory }, (error) => {
+    if (error) next(error);
+  });
+});
+
 app.use((error, _request, response, _next) => {
   console.error(error);
   if (response.headersSent) return;
@@ -379,5 +388,5 @@ app.use((error, _request, response, _next) => {
 
 await initializeDatabase();
 app.listen(port, "0.0.0.0", () => {
-  console.log(`API projet IHME prête sur le port ${port}.`);
+  console.log(`Application projet IHME prête sur le port ${port}.`);
 });

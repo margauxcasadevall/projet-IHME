@@ -65,6 +65,19 @@ Prérequis : Node.js 22 ou supérieur et une instance PostgreSQL accessible.
 
 Le frontend de développement est servi par Vite et transmet les requêtes `/api` à l’API sur le port `3000`.
 
+## Vérification et déploiement sur le serveur du cours
+
+Le workflow `ci.yml` vérifie la compilation et construit les images Docker à chaque push et pull request. Le workflow `publish.yml` publie sur GitHub Container Registry les changements de `main`. Il ne modifie pas le serveur automatiquement : un déploiement doit être demandé manuellement dans l’onglet **Actions**, en lançant **Construire et publier l’image** avec l’option **Déployer cette version après construction** activée.
+
+Avant le premier déploiement, l’enseignant doit attribuer un identifiant `pXX`, autoriser le dépôt sur la plateforme et installer les paramètres côté serveur. Dans les paramètres GitHub du dépôt, configurer ensuite :
+
+- la variable `IHME_DEPLOY_URL` avec l’URL HTTPS de déploiement attribuée, au format `https://<serveur>/__deploy/pXX` ;
+- le secret `IHME_DEPLOY_TOKEN` avec le jeton privé fourni par l’enseignant.
+
+La plateforme fournit PostgreSQL via `DATABASE_URL` et `PUBLIC_ORIGIN`. Cette application requiert également `JWT_SECRET` (au moins 32 caractères) : l’enseignant doit le fournir au conteneur dans sa configuration de déploiement avant que l’application puisse démarrer. Ne pas mettre ce secret dans le dépôt ni dans les paramètres publics GitHub.
+
+Le service de déploiement attend une image unique qui sert l’API et le frontend sur le port `3000` ; le [Dockerfile](./Dockerfile) construit cette image. L’application locale sous Docker Compose reste composée de trois services.
+
 ## Règles de sortie
 
 Les activités de course à pied et de trail utilisent une allure moyenne en **min/km**. La randonnée et le vélo utilisent une vitesse moyenne en **km/h**. Chaque sortie comprend un titre, une description d’itinéraire, une distance, une date, une heure de rendez-vous, une allure ou vitesse moyenne et un nombre maximum de participants. Le lien vers une carte est facultatif.
