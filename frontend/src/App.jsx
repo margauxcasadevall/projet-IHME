@@ -399,7 +399,7 @@ function OutingCard({ outing, currentUserId, onJoin, onLeave, onEdit, onDelete, 
         {gpxHref && <a className="route-link" href={gpxHref} target={hasUploadedGpx ? undefined : "_blank"} rel={hasUploadedGpx ? undefined : "noreferrer"}><Download size={14} /> Télécharger le tracé GPX <ArrowRight size={13} /></a>}
         <div className="card-stats">
           <div><Route size={16} /><span><strong>{Number(outing.distance_km).toLocaleString("fr-FR")} km</strong><small>distance</small></span></div>
-          <div><ArrowDownUp size={16} /><span><strong>{Number(outing.average_speed).toLocaleString("fr-FR")} {activity.speed}</strong><small>allure moyenne</small></span></div>
+          <div><ArrowDownUp size={16} /><span><strong>{Number(outing.average_speed).toLocaleString("fr-FR")} {activity.speed}</strong><small>{activity.speed === "min/km" ? "allure moyenne" : "vitesse moyenne"}</small></span></div>
           <div><Users size={16} /><span><strong>{outing.participant_count}/{outing.max_participants}</strong><small>participants</small></span></div>
         </div>
         {(outing.elevation_gain_m != null || outing.elevation_loss_m != null) && (
@@ -459,9 +459,14 @@ function App() {
     return () => { active = false; };
   }, []);
 
-  const visibleOutings = useMemo(() => outings
-    .filter((outing) => filter === "all" || outing.activity === filter)
-    .filter((outing) => `${outing.title} ${outing.route_description} ${outing.organizer_name}`.toLowerCase().includes(search.toLowerCase())), [outings, filter, search]);
+  const visibleOutings = useMemo(() => {
+    const searchTerm = search.trim().toLocaleLowerCase("fr-FR");
+    return outings
+      .filter((outing) => filter === "all" || outing.activity === filter)
+      .filter((outing) => `${outing.title} ${activities[outing.activity]?.label || ""} ${outing.route_description || ""} ${outing.organizer_name || ""} ${outing.meeting_place || ""}`
+        .toLocaleLowerCase("fr-FR")
+        .includes(searchTerm));
+  }, [outings, filter, search]);
 
   async function handleLogin(nextUser) {
     setUser(nextUser);
@@ -565,8 +570,24 @@ function App() {
       </header>
       <main className="page-content">
         <section className="welcome-strip">
-          <div><span className="eyebrow"><span className="eyebrow-dot" /> ESPACE ADHÉRENTS</span><h1>Agenda <em>outdoor</em></h1><p>Trouvez une activité et gérez vos inscriptions.</p></div>
-          <button className="button button-lime" onClick={() => setModal({ outing: null })}><Plus size={18} /> Proposer une sortie</button>
+          <div className="welcome-copy">
+            <span className="eyebrow"><span className="eyebrow-dot" /> L’AVENTURE COMMENCE ICI</span>
+            <h1>Dehors,<br /><em>on est mieux.</em></h1>
+            <p>Trouvez votre prochaine sortie.</p>
+            <button className="button button-lime" onClick={() => setModal({ outing: null })}><Plus size={18} /> Proposer une sortie</button>
+          </div>
+          <div className="hero-map" aria-hidden="true">
+            <svg className="topographic-map" viewBox="0 0 640 390" preserveAspectRatio="xMidYMid slice">
+              <path d="M-30 65C59 15 96 114 185 72S309-8 386 42s145 60 286-3M-37 89c96-50 128 58 221 15S314 18 384 62s154 66 302 4M-31 117c94-43 133 63 223 24s129-76 195-30 147 70 308 13M-24 147c101-44 143 57 231 29s128-78 196-34 154 71 306 25M-16 180c108-46 142 47 239 34s123-77 190-37 155 79 302 39M-12 215c102-47 152 39 248 36s124-70 189-35 157 83 293 54M-20 253c106-53 154 24 253 36s121-61 190-31 151 81 289 65M-26 294c115-55 163 12 264 34s120-49 190-25 150 82 286 81M-20 337c121-57 173-1 277 27s120-39 192-18 143 81 277 94" />
+              <path d="M43 391c33-62 32-122 91-164s103-48 109-111S305 26 359 1M105 403c36-67 38-129 100-171s99-45 104-109S353 67 411 0M172 411c37-64 44-119 106-153s100-39 108-98S428 89 477 10M245 410c37-57 52-103 108-130s94-30 111-80S501 102 548 25M324 406c37-49 56-83 107-103s91-22 115-61 25-92 68-126" />
+              <path className="map-route" d="M90 321c56-18 51-84 114-89s90 41 142 14 29-78 91-97 83 8 134-35" />
+              <circle className="map-stop" cx="90" cy="321" r="8" />
+              <circle className="map-stop" cx="204" cy="232" r="7" />
+              <circle className="map-stop" cx="437" cy="149" r="7" />
+              <circle className="map-destination" cx="571" cy="114" r="11" />
+            </svg>
+            <div className="map-label map-label-top"><span className="map-live-dot" /> PARCOURS À DÉCOUVRIR</div>
+          </div>
         </section>
         <div className="dashboard-row">
           <div className="stats-intro"><span className="eyebrow">EN UN COUP D’ŒIL</span><h2>Votre activité</h2></div>
@@ -575,8 +596,13 @@ function App() {
           {nextOuting && <div className="next-callout"><span className="next-kicker"><span /> À VENIR</span><strong>{nextOuting.title}</strong><span>{formatDate(nextOuting.event_date, nextOuting.start_time)}</span><ArrowRight size={16} /></div>}
         </div>
         <section className="listing-section" id="sorties">
-          <div className="section-heading"><div><span className="eyebrow">SORTIES À VENIR</span><h2>Les sorties <span className="heading-count">{outings.length.toString().padStart(2, "0")}</span></h2></div><div className="search-wrap"><Search size={17} /><input aria-label="Rechercher une sortie" placeholder="Rechercher une sortie…" value={search} onChange={(event) => setSearch(event.target.value)} /></div></div>
+          <div className="section-heading"><div><span className="eyebrow">SORTIES À VENIR</span><h2>Les sorties <span className="heading-count" aria-label={`${visibleOutings.length} résultat${visibleOutings.length > 1 ? "s" : ""}`}>{visibleOutings.length.toString().padStart(2, "0")}</span></h2></div><div className="search-wrap"><Search size={17} /><input aria-label="Rechercher par activité, nom, description ou lieu" placeholder="Rechercher une sortie…" value={search} onChange={(event) => setSearch(event.target.value)} /></div></div>
           <div className="filter-row"><div className="filter-tabs" role="tablist" aria-label="Filtrer par activité">{filters.map((item) => <button key={item.id} role="tab" aria-selected={filter === item.id} className={filter === item.id ? "filter-active" : ""} onClick={() => setFilter(item.id)}>{item.label}</button>)}</div><span className="sort-label"><SlidersHorizontal size={15} /> Les plus proches d’abord</span></div>
+          <p className="result-summary" role="status">
+            {visibleOutings.length} sortie{visibleOutings.length !== 1 ? "s" : ""} affichée{visibleOutings.length !== 1 ? "s" : ""}
+            {filter !== "all" && ` · Activité : ${filters.find((item) => item.id === filter)?.label}`}
+            {search.trim() && ` · Recherche : « ${search.trim()} »`}
+          </p>
           {error && <div className="global-error" role="alert">{error}<button onClick={() => setError("")} aria-label="Fermer"><X size={15} /></button></div>}
           {visibleOutings.length ? <div className="outing-grid">{visibleOutings.map((outing) => <OutingCard key={outing.id} outing={outing} currentUserId={user.id} busy={busyId === outing.id} onJoin={() => joinOuting(outing.id)} onLeave={() => leaveOuting(outing.id)} onEdit={() => setModal({ outing })} onDelete={() => deleteOuting(outing)} />)}</div> : (
             <div className="empty-state"><div className="empty-icon"><Mountain size={26} /></div><h3>{search || filter !== "all" ? "Aucun résultat" : "Aucune sortie à venir"}</h3><p>{search || filter !== "all" ? "Modifiez votre recherche ou choisissez un autre filtre." : "Proposez une sortie pour la rendre visible aux adhérents."}</p>{!search && filter === "all" && <button className="button button-dark" onClick={() => setModal({ outing: null })}><Plus size={16} /> Proposer une sortie</button>}</div>
