@@ -54,6 +54,11 @@ export async function initializeDatabase() {
       PRIMARY KEY (outing_id, user_id)
     );
 
+    CREATE TABLE IF NOT EXISTS app_seeds (
+      name TEXT PRIMARY KEY,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
     CREATE INDEX IF NOT EXISTS outings_event_date_idx ON outings(event_date, start_time);
     CREATE INDEX IF NOT EXISTS outing_participants_user_idx ON outing_participants(user_id);
   `);

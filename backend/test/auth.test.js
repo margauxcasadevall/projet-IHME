@@ -2,7 +2,11 @@ import { afterEach, test } from "node:test";
 import assert from "node:assert/strict";
 import bcrypt from "bcryptjs";
 import { initializeSessionSecret } from "../src/auth.js";
-import { demoCredentials, initializeDemoAccount } from "../src/demo.js";
+import {
+  demoCredentials,
+  initializeDemoAccount,
+  initializeSampleData
+} from "../src/demo.js";
 
 const originalJwtSecret = process.env.JWT_SECRET;
 
@@ -84,4 +88,47 @@ test("initializes a usable demo account with a hashed password", async () => {
     demoCredentials.password,
     insertedUser.passwordHash
   ), true);
+});
+
+test("seeds fictional profiles, outings, and participant rows only once", async () => {
+  const statements = [];
+  let insertedSeed = true;
+  let nextId = 1;
+  const idsByEmail = new Map();
+  const client = {
+    async query(sql, values = []) {
+      statements.push({ sql, values });
+      if (sql.includes("INSERT INTO app_seeds")) {
+        return { rowCount: insertedSeed ? 1 : 0, rows: insertedSeed ? [{ name: values[0] }] : [] };
+      }
+      if (sql.includes("INSERT INTO users")) {
+        idsByEmail.set(values[1], nextId++);
+        return { rowCount: 1, rows: [] };
+      }
+      if (sql.includes("SELECT id FROM users")) {
+        return { rowCount: 1, rows: [{ id: idsByEmail.get(values[0]) }] };
+      }
+      if (sql.includes("INSERT INTO outings")) {
+        return { rowCount: 1, rows: [{ id: nextId++ }] };
+      }
+      return { rowCount: 1, rows: [] };
+    },
+    release() {}
+  };
+  const database = { connect: async () => client };
+
+  await initializeSampleData(database);
+
+  assert.equal(statements.filter(({ sql }) => sql.includes("INSERT INTO users")).length, 5);
+  assert.equal(statements.filter(({ sql }) => sql.includes("INSERT INTO outings")).length, 7);
+  assert.equal(statements.filter(({ sql }) => sql.includes("INSERT INTO outing_participants")).length, 26);
+  assert.ok(statements.some(({ values }) => values.includes("camille.martin@example.test")));
+  assert.ok(statements.some(({ values }) => values.includes("Randonnée aux Calanques")));
+
+  statements.length = 0;
+  insertedSeed = false;
+  await initializeSampleData(database);
+  assert.equal(statements.filter(({ sql }) => sql.includes("INSERT INTO users")).length, 0);
+  assert.equal(statements.filter(({ sql }) => sql.includes("INSERT INTO outings")).length, 0);
+  assert.equal(statements.at(-1).sql, "COMMIT");
 });

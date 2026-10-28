@@ -6,7 +6,7 @@ import bcrypt from "bcryptjs";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import { pool, initializeDatabase } from "./db.js";
-import { initializeDemoAccount } from "./demo.js";
+import { initializeDemoAccount, initializeSampleData } from "./demo.js";
 import {
   clearSessionCookie,
   initializeSessionSecret,
@@ -434,6 +434,7 @@ app.use((error, _request, response, _next) => {
 
 await initializeDatabase();
 await initializeDemoAccount();
+await initializeSampleData();
 await initializeSessionSecret();
 app.listen(port, "0.0.0.0", () => {
   console.log(`Application projet IHME prête sur le port ${port}.`);

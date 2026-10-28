@@ -58,26 +58,64 @@ Après validation, la sortie est enregistrée et apparaît dans la liste avec se
 
 ## Exemple de données et requête SQL
 
-Exemple fictif, simplifié, des tables `users` et `outings` :
+Jeu d’exemple entièrement fictif, automatiquement ajouté une seule fois à la base au premier démarrage de l’API. Il crée les cinq profils, les sept sorties et les inscriptions ci-dessous ; les sorties apparaissent donc dans l’application tant que leurs dates sont à venir. Les lieux de rendez-vous sont laissés à préciser. Les adresses `example.test` et les profils ne sont pas des comptes destinés à la connexion : leurs mots de passe aléatoires ne sont pas connus. Les numéros d’identification du tableau sont illustratifs et peuvent différer de ceux attribués par PostgreSQL. Les mentions de genre et d’activité préférée restent descriptives et ne sont pas enregistrées dans la base.
 
-| Table | id | full_name / title | organizer_id | activity | distance_km | average_speed |
-|---|---:|---|---:|---|---:|---:|
-| `users` | 7 | Camille Martin | — | — | — | — |
-| `outings` | 42 | Randonnée aux Calanques | 7 | `hiking` | 12 | 4.5 |
+### Profils fictifs
+
+| id | Nom | Genre | Profil / activité préférée |
+|---:|---|---|---|
+| 7 | Camille Martin | Femme | Étudiante STAPS, randonnée |
+| 8 | Inès Benali | Femme | Étudiante STAPS, course à pied |
+| 9 | Léa Fournier | Femme | Étudiante STAPS, trail |
+| 10 | Hugo Bernard | Homme | Étudiant STAPS, vélo |
+| 11 | Sami Diallo | Homme | Étudiant STAPS, randonnée |
+
+### Sorties fictives
+
+Les codes d’activité sont ceux utilisés dans la base : `hiking` (randonnée), `running` (course), `trail` et `cycling` (vélo). La date et l’heure sont indiquées pour chaque sortie ; l’unité de `average_speed` dépend de l’activité.
+
+| id | Sortie | Activité | Date et heure | Organisateur (`organizer_id`) | Distance | Allure ou vitesse moyenne | Capacité |
+|---:|---|---|---|---|---:|---:|---:|
+| 42 | Randonnée aux Calanques | `hiking` | 2026-11-07 08:30 | Camille (7) | 12 km | 4,5 km/h | 6 |
+| 43 | Course au parc Borély | `running` | 2026-11-08 09:00 | Inès (8) | 7 km | 6 min/km | 4 |
+| 44 | Trail de la Sainte-Victoire | `trail` | 2026-11-14 07:30 | Léa (9) | 18 km | 7 min/km | 5 |
+| 45 | Vélo sur la Côte Bleue | `cycling` | 2026-11-15 08:00 | Hugo (10) | 35 km | 20 km/h | 6 |
+| 46 | Randonnée au Garlaban | `hiking` | 2026-11-21 09:00 | Sami (11) | 10 km | 4 km/h | 3 |
+| 47 | Footing au Prado | `running` | 2026-11-21 10:00 | Camille (7) | 5 km | 5,5 min/km | 5 |
+| 48 | Trail du massif de l’Étoile | `trail` | 2026-11-22 08:00 | Inès (8) | 14 km | 6,5 min/km | 4 |
+
+### Inscriptions fictives
+
+Chaque ligne associe un utilisateur à une sortie dans `outing_participants`. L’organisateur est également inscrit et compte dans la capacité, comme dans l’application.
+
+| Sortie (`outing_id`) | Utilisateurs inscrits (`user_id`) |
+|---:|---|
+| 42 | 7 (Camille), 8 (Inès), 10 (Hugo), 11 (Sami) |
+| 43 | 7 (Camille), 8 (Inès), 9 (Léa) |
+| 44 | 8 (Inès), 9 (Léa), 10 (Hugo), 11 (Sami) |
+| 45 | 7 (Camille), 9 (Léa), 10 (Hugo), 11 (Sami) |
+| 46 | 7 (Camille), 10 (Hugo), 11 (Sami) |
+| 47 | 7 (Camille), 8 (Inès), 9 (Léa), 10 (Hugo), 11 (Sami) |
+| 48 | 8 (Inès), 9 (Léa), 11 (Sami) |
 
 Dans le schéma, `users.id` et `outings.id` sont des clés primaires. `outings.organizer_id` est une clé étrangère qui relie une sortie à son organisateur dans `users`. La distance est en kilomètres ; pour la randonnée, `average_speed` est en km/h.
 
-Cette requête affiche les sorties de randonnée et le nom de leur organisateur, de la plus proche à la plus éloignée :
+Dans `outing_participants`, `outing_id` et `user_id` sont des clés étrangères vers les sorties et les utilisateurs. Ensemble, ils forment la clé primaire : un même utilisateur ne peut donc pas être inscrit deux fois à la même sortie.
+
+Cette requête affiche les sorties de randonnée, le nom de leur organisateur et le nombre d’inscrits, de la plus proche à la plus éloignée :
 
 ```sql
-SELECT o.title, u.full_name AS organizer, o.distance_km, o.average_speed
+SELECT o.title, u.full_name AS organizer, o.distance_km, o.average_speed,
+       COUNT(p.user_id) AS participant_count
 FROM outings AS o
 JOIN users AS u ON u.id = o.organizer_id
+LEFT JOIN outing_participants AS p ON p.outing_id = o.id
 WHERE o.activity = 'hiking'
+GROUP BY o.id, u.full_name
 ORDER BY o.event_date, o.start_time;
 ```
 
-`JOIN` associe chaque sortie à son organisateur grâce aux identifiants liés. `WHERE` ne garde que les randonnées, et `ORDER BY` les trie par date et heure. Avec les données d’exemple, le résultat inclut « Randonnée aux Calanques », organisée par Camille Martin, sur 12 km à 4,5 km/h.
+`JOIN` associe chaque sortie à son organisateur ; `LEFT JOIN` récupère ses inscriptions ; `COUNT` les compte ; `WHERE` ne garde que les randonnées et `ORDER BY` les trie par date et heure. Avec ces données, la requête renvoie deux sorties : « Randonnée aux Calanques » (4 inscrits) et « Randonnée au Garlaban » (3 inscrits).
 
 ## Voir l’application sur son ordinateur
 
