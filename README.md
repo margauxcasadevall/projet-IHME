@@ -56,6 +56,29 @@ Après validation, la sortie est enregistrée et apparaît dans la liste avec se
 - **Base de données :** PostgreSQL.
 - **Conteneurisation :** Docker Compose.
 
+## Exemple de données et requête SQL
+
+Exemple fictif, simplifié, des tables `users` et `outings` :
+
+| Table | id | full_name / title | organizer_id | activity | distance_km | average_speed |
+|---|---:|---|---:|---|---:|---:|
+| `users` | 7 | Camille Martin | — | — | — | — |
+| `outings` | 42 | Randonnée aux Calanques | 7 | `hiking` | 12 | 4.5 |
+
+Dans le schéma, `users.id` et `outings.id` sont des clés primaires. `outings.organizer_id` est une clé étrangère qui relie une sortie à son organisateur dans `users`. La distance est en kilomètres ; pour la randonnée, `average_speed` est en km/h.
+
+Cette requête affiche les sorties de randonnée et le nom de leur organisateur, de la plus proche à la plus éloignée :
+
+```sql
+SELECT o.title, u.full_name AS organizer, o.distance_km, o.average_speed
+FROM outings AS o
+JOIN users AS u ON u.id = o.organizer_id
+WHERE o.activity = 'hiking'
+ORDER BY o.event_date, o.start_time;
+```
+
+`JOIN` associe chaque sortie à son organisateur grâce aux identifiants liés. `WHERE` ne garde que les randonnées, et `ORDER BY` les trie par date et heure. Avec les données d’exemple, le résultat inclut « Randonnée aux Calanques », organisée par Camille Martin, sur 12 km à 4,5 km/h.
+
 ## Voir l’application sur son ordinateur
 
 Prérequis : **Docker Desktop** installé et démarré. À la racine du projet, lancer :
