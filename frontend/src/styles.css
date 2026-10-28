@@ -287,17 +287,19 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 }
 .topbar .brand-word { font-size: 25px; }
 .main-nav { display: flex; gap: 31px; align-self: stretch; margin-left: 70px; }
-.main-nav a {
+.main-nav button {
+  padding: 0;
   display: flex;
   align-items: center;
   position: relative;
-  text-decoration: none;
   color: var(--muted);
+  border: 0;
+  background: transparent;
   font-size: 11px;
   font-weight: 600;
 }
-.main-nav a.nav-active { color: var(--pine); }
-.main-nav a.nav-active::after {
+.main-nav button:hover, .main-nav button.nav-active { color: var(--pine); }
+.main-nav button.nav-active::after {
   position: absolute;
   content: "";
   bottom: 0;
@@ -308,6 +310,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   border-radius: 2px;
 }
 .user-menu { display: flex; align-items: center; gap: 10px; margin-left: auto; color: #4d564e; font-size: 11px; font-weight: 600; }
+.profile-nav { display: inline-flex; align-items: center; gap: 9px; padding: 0; color: inherit; border: 0; background: transparent; font-size: inherit; font-weight: inherit; }
+.profile-nav:hover .user-name { color: var(--forest); text-decoration: underline; text-underline-offset: 3px; }
 .user-avatar, .avatar {
   display: inline-flex;
   flex: 0 0 auto;
@@ -565,6 +569,30 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     repeating-radial-gradient(ellipse at 82% 110%, transparent 0 13px, rgba(255, 255, 224, 0.42) 14px 15px, transparent 16px 27px),
     radial-gradient(ellipse at 18% 0%, rgba(255,255,255,0.28), transparent 40%);
 }
+.card-art.violet::before {
+  opacity: .8;
+  background:
+    repeating-radial-gradient(ellipse at 82% 120%, transparent 0 15px, rgba(255,255,255,.55) 16px 18px, transparent 19px 30px),
+    linear-gradient(165deg, transparent 58%, rgba(245, 220, 183, .28) 59% 61%, transparent 62%);
+}
+.card-art.lime::before {
+  opacity: .85;
+  background:
+    linear-gradient(150deg, transparent 0 45%, rgba(255,255,240,.3) 46% 47%, transparent 48%),
+    linear-gradient(165deg, transparent 0 57%, rgba(24,52,39,.32) 58% 60%, transparent 61%),
+    repeating-radial-gradient(ellipse at 80% 130%, transparent 0 18px, rgba(255,255,224,.35) 19px 20px, transparent 21px 32px);
+}
+.card-art.pine::before {
+  opacity: .82;
+  background:
+    repeating-linear-gradient(72deg, transparent 0 24px, rgba(255,255,238,.34) 25px 27px, transparent 28px 40px),
+    linear-gradient(150deg, transparent 0 54%, rgba(17,44,37,.4) 55% 60%, transparent 61%);
+}
+.card-art.moss::before {
+  background:
+    repeating-radial-gradient(ellipse at 82% 110%, transparent 0 13px, rgba(255, 255, 224, 0.42) 14px 15px, transparent 16px 27px),
+    radial-gradient(ellipse at 18% 0%, rgba(255,255,255,0.28), transparent 40%);
+}
 .card-art.moss { background: linear-gradient(125deg, #84965b 0%, #526b43 46%, #213d34 100%); }
 .card-art.violet { background: linear-gradient(125deg, #7d4d62 0%, #553448 50%, #30242d 100%); }
 .card-art.lime { background: linear-gradient(125deg, #b0b96a 0%, #77834c 48%, #334a35 100%); }
@@ -608,6 +636,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .card-content { padding: 17px 17px 15px; }
 .card-title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 5px; }
 .card-title-row h3 { margin: 0; color: var(--pine); font: 700 16px/1.4 "Manrope", sans-serif; letter-spacing: -.3px; }
+.outing-title-link { padding: 0; color: inherit; border: 0; background: transparent; text-align: left; font: inherit; }
+.outing-title-link:hover { color: #607845; text-decoration: underline; text-underline-offset: 3px; }
+.text-link { padding: 0; color: #3f5d3a; border: 0; background: transparent; font: inherit; font-weight: 700; }
+.text-link:hover { text-decoration: underline; text-underline-offset: 2px; }
 .more-button { flex: 0 0 auto; width: 28px; height: 27px; margin: -4px -5px 0 0; display: grid; place-items: center; color: #8a9385; border: 0; border-radius: 5px; background: transparent; }
 .more-button:hover { color: #445b3c; background: rgba(31, 53, 46, 0.05); }
 .outing-organizer { margin-top: 9px; display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 10px; }
@@ -630,6 +662,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .card-stats strong { color: #374137; font-size: 10px; white-space: nowrap; }
 .card-stats small { color: #858b80; font-size: 9px; white-space: nowrap; }
 .card-footer { min-height: 45px; display: flex; align-items: center; justify-content: space-between; gap: 6px; border-top: 1px solid rgba(29, 43, 39, 0.07); }
+.details-button { padding: 5px 8px; color: #526b43; border: 0; border-radius: 8px; background: transparent; font-size: 10px; font-weight: 700; }
+.details-button:hover { background: rgba(223, 234, 193, .55); }
 .spots { display: inline-flex; align-items: center; gap: 6px; color: #496a43; font-size: 10px; white-space: nowrap; }
 .spot-dot { width: 6px; height: 6px; border-radius: 50%; background: #84a460; }
 .spots-low { color: #9a5f2f; }
@@ -676,6 +710,57 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .page-footer .brand-word { font-size: 20px; }
 .page-footer .brand-mark { width: 30px; height: 25px; }
 .page-footer > span { color: var(--muted); font-size: 10px; }
+
+.profile-page, .calendar-page { padding: 38px 0 56px; }
+.profile-hero { padding: 28px; display: flex; align-items: center; gap: 20px; border: 1px solid rgba(37, 47, 39, 0.1); border-radius: 20px; background: rgba(255,253,248,.78); }
+.profile-avatar { width: 68px; height: 68px; flex: 0 0 auto; display: grid; place-items: center; color: #23392e; border-radius: 50%; background: linear-gradient(135deg, #e4efc6, #c8d8a6); font: 700 27px "Manrope", sans-serif; }
+.profile-hero h1 { margin: 7px 0 5px; color: var(--pine); font: 700 28px "Manrope", sans-serif; letter-spacing: -.8px; }
+.profile-hero p { margin: 0; color: var(--muted); font-size: 12px; }
+.profile-tabs { margin-top: 24px; display: flex; gap: 7px; border-bottom: 1px solid var(--line); }
+.profile-tabs button, .calendar-scopes button { min-height: 45px; padding: 0 14px; display: inline-flex; align-items: center; gap: 8px; position: relative; color: var(--muted); border: 0; background: transparent; font-size: 11px; font-weight: 600; }
+.profile-tabs button.filter-active, .calendar-scopes button.filter-active { color: var(--pine); }
+.profile-tabs button.filter-active::after, .calendar-scopes button.filter-active::after { position: absolute; right: 12px; bottom: -1px; left: 12px; height: 2px; content: ""; background: linear-gradient(90deg, var(--forest-soft), var(--sage-strong)); }
+.profile-tabs button span { min-width: 20px; padding: 3px 6px; border-radius: 999px; background: rgba(34,75,63,.08); font-size: 9px; text-align: center; }
+.profile-outings { margin: 18px 0 40px; display: flex; flex-direction: column; gap: 9px; }
+.profile-outing { width: 100%; min-height: 68px; padding: 11px 15px; display: flex; align-items: center; gap: 13px; color: var(--muted); border: 1px solid rgba(37,47,39,.09); border-radius: 13px; background: rgba(255,253,248,.83); text-align: left; }
+.profile-outing:hover, .calendar-event:hover { border-color: rgba(81,104,74,.3); background: #fffdf8; box-shadow: 0 8px 18px rgba(24,42,35,.06); }
+.profile-outing-info, .calendar-event-copy { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 5px; }
+.profile-outing-info strong, .calendar-event-copy strong { overflow: hidden; color: var(--pine); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.profile-outing-info small, .calendar-event-copy small { color: var(--muted); font-size: 10px; }
+.profile-outing-distance { color: #4a6342; font-size: 10px; font-weight: 700; white-space: nowrap; }
+.mini-icon.moss { color: #3d5838; background: linear-gradient(135deg, #eaf2cf, #d8e4ae); }
+.mini-icon.lime { color: #4f6032; background: linear-gradient(135deg, #eff4d6, #dce8a9); }
+.mini-icon.pine { color: #385444; background: linear-gradient(135deg, #e5eddb, #cbd9bf); }
+.calendar-heading { margin-bottom: 20px; }
+.calendar-heading h2 { margin-top: 5px; }
+.calendar-toolbar { padding: 10px 15px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border: 1px solid rgba(37,47,39,.09); border-radius: 14px; background: rgba(255,253,248,.75); }
+.calendar-scopes { align-self: stretch; display: flex; flex: 0 0 auto; gap: 4px; }
+.calendar-scopes button { min-height: 41px; padding: 0 11px; font-size: 10px; }
+.calendar-filters { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+.calendar-filters label { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 10px; }
+.calendar-filters input, .calendar-filters select { max-width: 160px; height: 34px; padding: 0 8px; color: var(--pine); border: 1px solid rgba(29,43,39,.13); border-radius: 9px; background: white; font-size: 10px; }
+.calendar-layout { margin-top: 18px; display: grid; grid-template-columns: minmax(270px, .82fr) minmax(0, 1.18fr); gap: 17px; align-items: start; }
+.calendar-month, .calendar-events { padding: 18px; border: 1px solid rgba(37,47,39,.09); border-radius: 16px; background: rgba(255,253,248,.78); }
+.calendar-month-head { margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; }
+.calendar-month-head h3 { margin: 0; color: var(--pine); font: 700 16px "Manrope", sans-serif; text-transform: capitalize; }
+.calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.calendar-weekdays { margin-bottom: 6px; color: #8a9288; font-size: 9px; font-weight: 700; text-align: center; }
+.calendar-weekdays span { padding: 7px 0; }
+.calendar-day { height: 40px; position: relative; color: #526057; border: 0; border-radius: 9px; background: transparent; font-size: 11px; }
+.calendar-day:hover { background: rgba(223,234,193,.55); }
+.calendar-day.has-events { color: var(--pine); background: rgba(223,234,193,.42); font-weight: 700; }
+.calendar-day.selected { color: white; background: var(--forest); }
+.calendar-day i { width: 5px; height: 5px; position: absolute; right: 5px; bottom: 4px; border-radius: 50%; background: #829e56; font-size: 0; }
+.calendar-day.selected i { background: #dce8a9; }
+.calendar-empty-day { height: 40px; }
+.calendar-reset { margin-top: 12px; padding: 5px 0; color: #61744e; border: 0; background: transparent; font-size: 10px; font-weight: 600; }
+.calendar-reset:hover { text-decoration: underline; }
+.calendar-events-head { margin: 2px 0 14px; display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; }
+.calendar-events-head h3 { margin: 6px 0 0; color: var(--pine); font: 700 16px "Manrope", sans-serif; text-transform: capitalize; }
+.calendar-events-head > span { color: var(--muted); font-size: 10px; }
+.calendar-event-list { display: flex; flex-direction: column; gap: 8px; }
+.calendar-event { min-width: 0; min-height: 62px; padding: 9px 10px; display: flex; align-items: center; gap: 11px; color: var(--muted); border: 1px solid rgba(37,47,39,.08); border-radius: 12px; background: rgba(255,255,255,.62); text-align: left; }
+.calendar-empty { padding: 24px 10px; color: var(--muted); font-size: 11px; line-height: 1.6; text-align: center; }
 
 .modal-backdrop { position: fixed; z-index: 10; inset: 0; padding: 22px; display: grid; place-items: center; overflow-y: auto; background: rgba(15, 35, 28, 0.58); backdrop-filter: blur(3px); }
 .outing-modal {
@@ -733,6 +818,28 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   border-top: 1px solid rgba(29, 43, 39, 0.08);
 }
 .form-actions .button { min-height: 39px; font-size: 11px; }
+.details-modal { width: min(100%, 680px); padding: 0; overflow: hidden auto; }
+.details-art { height: 142px; }
+.details-close { position: absolute; z-index: 3; top: 12px; right: 12px; color: white; background: rgba(15,35,28,.26); }
+.details-close:hover { color: white; background: rgba(15,35,28,.52); }
+.details-content { padding: 23px 27px 22px; }
+.details-content h2 { margin: 8px 0 5px; color: var(--pine); font: 700 24px "Manrope", sans-serif; letter-spacing: -.6px; }
+.details-organizer { margin: 0; color: var(--muted); font-size: 11px; }
+.details-stats { margin: 18px 0; padding: 14px 0; display: flex; flex-wrap: wrap; gap: 14px 24px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.details-stats > div { min-width: 100px; display: flex; align-items: center; gap: 8px; color: #728b47; }
+.details-stats > div span { display: flex; flex-direction: column; gap: 3px; }
+.details-stats strong { color: #374137; font-size: 11px; }
+.details-stats small { color: #858b80; font-size: 9px; }
+.details-block { margin-top: 18px; }
+.details-block h3 { margin: 0 0 8px; display: flex; align-items: center; gap: 7px; color: #354336; font-size: 12px; }
+.details-block h3 svg { color: #78884a; }
+.details-block p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.6; white-space: pre-wrap; }
+.details-links { display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.participant-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.participant-chip { padding: 5px 9px 5px 5px; display: inline-flex; align-items: center; gap: 7px; color: #405047; border: 1px solid rgba(37,47,39,.09); border-radius: 999px; background: rgba(255,255,255,.76); font-size: 10px; }
+.participant-chip:hover { background: #eef2e5; }
+.participant-chip small { color: #75806f; font-size: 8px; }
+.details-content .form-actions { margin-top: 20px; }
 .loading-screen {
   min-height: 100vh;
   display: flex;
@@ -778,7 +885,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .topbar { height: 60px; }
   .topbar-inner, .page-content { width: calc(100% - 34px); }
   .main-nav { margin-left: 25px; gap: 16px; }
-  .main-nav a { font-size: 9px; }
+  .main-nav button { font-size: 9px; }
   .user-name { display: none; }
   .welcome-strip {
     min-height: 490px;
@@ -825,10 +932,14 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .page-footer { gap: 9px; }
   .page-footer > span { font-size: 8px; }
   .outing-modal { padding: 19px; }
+  .calendar-toolbar { align-items: flex-start; flex-direction: column; }
+  .calendar-filters { justify-content: flex-start; }
+  .calendar-layout { grid-template-columns: 1fr; }
+  .calendar-month { max-width: none; }
 }
 @media (max-width: 420px) {
   .main-nav { margin-left: 17px; gap: 12px; }
-  .main-nav a { font-size: 8px; }
+  .main-nav button { font-size: 8px; }
   .brand-mark { width: 34px; height: 28px; }
   .brand-word { font-size: 24px; }
   .topbar .brand-word { font-size: 22px; }
@@ -839,4 +950,21 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .outing-modal { max-height: calc(100vh - 20px); padding: 16px; }
   .form-actions { flex-direction: column-reverse; }
   .form-actions .button { width: 100%; }
+  .profile-page, .calendar-page { padding-top: 25px; }
+  .profile-hero { padding: 19px; gap: 13px; }
+  .profile-avatar { width: 54px; height: 54px; font-size: 22px; }
+  .profile-hero h1 { font-size: 22px; }
+  .profile-tabs { overflow-x: auto; }
+  .profile-tabs button { flex: 0 0 auto; padding: 0 8px; font-size: 9px; }
+  .profile-outing { gap: 8px; padding: 10px; }
+  .profile-outing-info strong { font-size: 10px; }
+  .profile-outing-info small { font-size: 8px; }
+  .profile-outing-distance { font-size: 9px; }
+  .calendar-filters label { flex: 1 1 45%; }
+  .calendar-filters input, .calendar-filters select { flex: 1; min-width: 0; }
+  .calendar-scopes button { padding: 0 8px; font-size: 9px; }
+  .calendar-month, .calendar-events { padding: 13px; }
+  .calendar-day, .calendar-empty-day { height: 36px; }
+  .details-content { padding: 19px; }
+  .details-content h2 { font-size: 20px; }
 }

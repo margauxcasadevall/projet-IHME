@@ -6,9 +6,12 @@ Application web Zou! de sorties outdoor entre adhérents : randonnée, course à
 
 - Création d’un compte, connexion et déconnexion.
 - Consultation des sorties à venir, avec recherche par mot-clé et filtres par activité.
+- Consultation de tous les profils adhérents associés aux sorties, avec les sorties organisées, les participations passées et les inscriptions à venir.
+- Agenda mensuel des sorties et des participations, filtrable par période et par activité.
+- Fiche détaillée par sortie avec parcours, dénivelés, allure, lieu de rendez-vous et liste des participants.
 - Création, modification et annulation de ses propres sorties.
 - Inscription et désinscription aux sorties ; l’organisateur compte parmi les participants.
-- Affichage de la date, de l’heure, du point de rendez-vous, du tracé GPX, de la distance, de l’allure et des places disponibles.
+- Affichage de la date, de l’heure, du point de rendez-vous, du tracé GPX, de la distance, de l’allure et des places disponibles ; chaque activité dispose d’un motif visuel distinct.
 - Capacité maximale définie par l’organisateur. Une sortie complète ne peut plus recevoir d’inscriptions ; la liste d’attente n’est pas encore incluse.
 
 ## Besoin et scénario utilisateur

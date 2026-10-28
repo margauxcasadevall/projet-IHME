@@ -137,11 +137,17 @@ app.get("/api/outings", requireAuth, async (request, response, next) => {
               o.average_speed, o.max_participants, o.created_at,
               u.full_name AS organizer_name,
               COUNT(p.user_id)::int AS participant_count,
-              BOOL_OR(p.user_id = $1) AS user_is_joined
+              COALESCE(BOOL_OR(p.user_id = $1), FALSE) AS user_is_joined,
+              COALESCE(
+                json_agg(json_build_object('id', participant.id, 'fullName', participant.full_name)
+                         ORDER BY participant.full_name)
+                  FILTER (WHERE participant.id IS NOT NULL),
+                '[]'::json
+              ) AS participants
        FROM outings o
        JOIN users u ON u.id = o.organizer_id
        LEFT JOIN outing_participants p ON p.outing_id = o.id
-       WHERE o.event_date >= CURRENT_DATE
+       LEFT JOIN users participant ON participant.id = p.user_id
        GROUP BY o.id, u.full_name
        ORDER BY o.event_date ASC, o.start_time ASC`,
       [request.user.id]

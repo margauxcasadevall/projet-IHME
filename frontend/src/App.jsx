@@ -7,6 +7,8 @@ import {
   Bike,
   CalendarDays,
   Check,
+  ChevronLeft,
+  ChevronRight,
   Download,
   Footprints,
   Link2,
@@ -366,7 +368,62 @@ function OutingForm({ outing, onClose, onSave }) {
   );
 }
 
-function OutingCard({ outing, currentUserId, onJoin, onLeave, onEdit, onDelete, busy }) {
+function hasParticipant(outing, userId) {
+  return (outing.participants || []).some((participant) => Number(participant.id) === Number(userId));
+}
+
+function OutingDetails({ outing, currentUserId, onClose, onProfile }) {
+  const activity = activities[outing.activity] || activities.hiking;
+  const ActivityIcon = activity.icon;
+  const hasUploadedGpx = outing.gpx_is_uploaded;
+  const gpxHref = hasUploadedGpx ? `${appBasePath}api/outings/${outing.id}/gpx` : outing.gpx_url;
+
+  return (
+    <div className="modal-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+      <section className="outing-modal details-modal" role="dialog" aria-modal="true" aria-labelledby="outing-details-title">
+        <div className={`details-art card-art ${activity.tint}`}>
+          <span className="activity-pill"><ActivityIcon size={14} /> {activity.label}</span>
+          <button className="icon-button details-close" onClick={onClose} aria-label="Fermer"><X size={20} /></button>
+          <span className="card-date"><CalendarDays size={14} /> {formatDate(outing.event_date, outing.start_time)}</span>
+        </div>
+        <div className="details-content">
+          <span className="eyebrow"><span className="eyebrow-dot" /> DÉTAILS DE LA SORTIE</span>
+          <h2 id="outing-details-title">{outing.title}</h2>
+          <p className="details-organizer">
+            Organisée par{" "}
+            <button className="text-link" onClick={() => onProfile(outing.organizer_id)}>
+              {Number(outing.organizer_id) === Number(currentUserId) ? "vous" : outing.organizer_name}
+            </button>
+          </p>
+          <div className="details-stats">
+            <div><Route size={17} /><span><strong>{Number(outing.distance_km).toLocaleString("fr-FR")} km</strong><small>Distance</small></span></div>
+            <div><ArrowDownUp size={17} /><span><strong>{Number(outing.average_speed).toLocaleString("fr-FR")} {activity.speed}</strong><small>{activity.speed === "min/km" ? "Allure moyenne" : "Vitesse moyenne"}</small></span></div>
+            <div><Users size={17} /><span><strong>{outing.participant_count}/{outing.max_participants}</strong><small>Participants</small></span></div>
+            {outing.elevation_gain_m != null && <div><ArrowUp size={17} /><span><strong>+{outing.elevation_gain_m} m</strong><small>Dénivelé positif</small></span></div>}
+            {outing.elevation_loss_m != null && <div><ArrowDown size={17} /><span><strong>−{outing.elevation_loss_m} m</strong><small>Dénivelé négatif</small></span></div>}
+          </div>
+          {outing.meeting_place && <div className="details-block"><h3><MapPin size={16} /> Rendez-vous</h3><p>{outing.meeting_place}</p>{outing.meeting_maps_url && <a className="route-link" href={outing.meeting_maps_url} target="_blank" rel="noreferrer">Ouvrir dans Google Maps <ArrowRight size={13} /></a>}</div>}
+          {outing.route_description && <div className="details-block"><h3><Route size={16} /> Parcours et informations</h3><p>{outing.route_description}</p></div>}
+          {(outing.route_url || gpxHref) && <div className="details-block"><h3>Tracé</h3><div className="details-links">{outing.route_url && <a className="route-link" href={outing.route_url} target="_blank" rel="noreferrer"><Link2 size={14} /> Carte du parcours <ArrowRight size={13} /></a>}{gpxHref && <a className="route-link" href={gpxHref} target={hasUploadedGpx ? undefined : "_blank"} rel={hasUploadedGpx ? undefined : "noreferrer"}><Download size={14} /> Télécharger le tracé GPX <ArrowRight size={13} /></a>}</div></div>}
+          <div className="details-block">
+            <h3><Users size={16} /> Participants ({outing.participant_count})</h3>
+            <div className="participant-list">
+              {(outing.participants || []).map((participant) => (
+                <button key={participant.id} className="participant-chip" onClick={() => onProfile(participant.id)}>
+                  <span className="avatar">{participant.fullName.trim().slice(0, 1).toUpperCase()}</span>{participant.fullName}
+                  {Number(participant.id) === Number(outing.organizer_id) && <small>Organisateur</small>}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="form-actions"><button className="button button-quiet" onClick={onClose}>Fermer</button></div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function OutingCard({ outing, currentUserId, onJoin, onLeave, onEdit, onDelete, onOpen, onProfile, busy }) {
   const activity = activities[outing.activity] || activities.hiking;
   const ActivityIcon = activity.icon;
   const isOrganizer = Number(outing.organizer_id) === Number(currentUserId);
@@ -384,8 +441,8 @@ function OutingCard({ outing, currentUserId, onJoin, onLeave, onEdit, onDelete, 
         <div className="card-date"><CalendarDays size={14} /><span>{formatDate(outing.event_date, outing.start_time)}</span></div>
       </div>
       <div className="card-content">
-        <div className="card-title-row"><h3>{outing.title}</h3>{isOrganizer && <button className="more-button" onClick={onEdit} aria-label="Modifier la sortie"><SlidersHorizontal size={17} /></button>}</div>
-        <div className="outing-organizer"><span className="avatar">{organizerName.trim().slice(0, 1).toUpperCase()}</span><span>Proposée par <strong>{isOrganizer ? "vous" : organizerName}</strong></span></div>
+        <div className="card-title-row"><h3><button className="outing-title-link" onClick={onOpen}>{outing.title}</button></h3>{isOrganizer && <button className="more-button" onClick={onEdit} aria-label="Modifier la sortie"><SlidersHorizontal size={17} /></button>}</div>
+        <div className="outing-organizer"><span className="avatar">{organizerName.trim().slice(0, 1).toUpperCase()}</span><span>Proposée par <button className="text-link" onClick={() => onProfile(outing.organizer_id)}>{isOrganizer ? "vous" : organizerName}</button></span></div>
         {(outing.meeting_place || outing.meeting_maps_url) && (
           <div className="meeting-point">
             <MapPin size={15} />
@@ -412,6 +469,7 @@ function OutingCard({ outing, currentUserId, onJoin, onLeave, onEdit, onDelete, 
           <span className={`spots ${full ? "spots-full" : remaining <= 3 ? "spots-low" : ""}`}>
             <span className="spot-dot" />{full ? "Complet" : `${remaining} place${remaining > 1 ? "s" : ""} disponible${remaining > 1 ? "s" : ""}`}
           </span>
+          <button className="details-button" onClick={onOpen}>Détails</button>
           {isOrganizer ? (
             <button className="button button-delete" disabled={busy} onClick={onDelete}>Annuler la sortie</button>
           ) : outing.user_is_joined ? (
@@ -425,19 +483,148 @@ function OutingCard({ outing, currentUserId, onJoin, onLeave, onEdit, onDelete, 
   );
 }
 
+function ProfileView({ profileId, currentUser, outings, onOpenOuting }) {
+  const [section, setSection] = useState("participated");
+  const profile = Number(profileId) === Number(currentUser.id)
+    ? { id: currentUser.id, fullName: currentUser.fullName }
+    : outings.reduce((found, outing) => {
+      if (found) return found;
+      if (Number(outing.organizer_id) === Number(profileId)) {
+        return { id: outing.organizer_id, fullName: outing.organizer_name };
+      }
+      return (outing.participants || []).find((participant) => Number(participant.id) === Number(profileId)) || null;
+    }, null);
+
+  if (!profile) {
+    return <div className="empty-state"><h3>Profil indisponible</h3><p>Ce profil n’est pas encore associé à une sortie.</p></div>;
+  }
+
+  const organized = outings.filter((outing) => Number(outing.organizer_id) === Number(profile.id));
+  const participated = outings.filter((outing) => hasParticipant(outing, profile.id));
+  const registered = participated.filter((outing) => Number(outing.organizer_id) !== Number(profile.id) && isOutingUpcoming(outing));
+  const sections = [
+    { id: "participated", label: "Sorties participées", outings: participated },
+    { id: "registered", label: "Inscriptions à venir", outings: registered },
+    { id: "organized", label: "Sorties organisées", outings: organized }
+  ];
+  const selected = sections.find((item) => item.id === section);
+
+  return (
+    <section className="profile-page">
+      <div className="profile-hero">
+        <span className="profile-avatar">{profile.fullName.trim().slice(0, 1).toUpperCase()}</span>
+        <div><span className="eyebrow">PROFIL ADHÉRENT</span><h1>{profile.fullName}</h1><p>{organized.length} sortie{organized.length !== 1 ? "s" : ""} organisée{organized.length !== 1 ? "s" : ""} · {participated.length} sortie{participated.length !== 1 ? "s" : ""} participée{participated.length !== 1 ? "s" : ""}</p></div>
+      </div>
+      <div className="profile-tabs" role="tablist" aria-label="Sorties du profil">
+        {sections.map((item) => <button key={item.id} role="tab" aria-selected={section === item.id} className={section === item.id ? "filter-active" : ""} onClick={() => setSection(item.id)}>{item.label}<span>{item.outings.length}</span></button>)}
+      </div>
+      {selected.outings.length ? (
+        <div className="profile-outings">
+          {selected.outings.map((outing) => {
+            const activity = activities[outing.activity] || activities.hiking;
+            const ActivityIcon = activity.icon;
+            return (
+              <button key={outing.id} className="profile-outing" onClick={() => onOpenOuting(outing)}>
+                <span className={`mini-icon ${activity.tint}`}><ActivityIcon size={17} /></span>
+                <span className="profile-outing-info"><strong>{outing.title}</strong><small>{activity.label} · {formatDate(outing.event_date, outing.start_time)}</small></span>
+                <span className="profile-outing-distance">{Number(outing.distance_km).toLocaleString("fr-FR")} km</span><ArrowRight size={17} />
+              </button>
+            );
+          })}
+        </div>
+      ) : <div className="empty-state"><h3>Aucune sortie dans cette rubrique</h3><p>Les sorties correspondantes apparaîtront ici.</p></div>}
+    </section>
+  );
+}
+
+function CalendarView({ currentUser, outings, onOpenOuting }) {
+  const [scope, setScope] = useState("all");
+  const [activityFilter, setActivityFilter] = useState("all");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [selectedDate, setSelectedDate] = useState("");
+  const [month, setMonth] = useState(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
+  const monthLabel = new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric" }).format(month);
+  const matchingOutings = outings.filter((outing) => {
+    const date = String(outing.event_date).slice(0, 10);
+    return (scope === "all" || hasParticipant(outing, currentUser.id))
+      && (activityFilter === "all" || outing.activity === activityFilter)
+      && (!fromDate || date >= fromDate)
+      && (!toDate || date <= toDate);
+  });
+  const firstDay = new Date(month.getFullYear(), month.getMonth(), 1);
+  const daysInMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
+  const startOffset = (firstDay.getDay() + 6) % 7;
+  const cellCount = Math.ceil((startOffset + daysInMonth) / 7) * 7;
+  const cells = Array.from({ length: cellCount }, (_, index) => {
+    const day = index - startOffset + 1;
+    if (day < 1 || day > daysInMonth) return null;
+    return `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  });
+  const monthOutings = matchingOutings.filter((outing) => {
+    const date = String(outing.event_date).slice(0, 10);
+    return date.startsWith(`${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, "0")}`);
+  });
+  const visibleOutings = monthOutings.filter((outing) => !selectedDate || String(outing.event_date).slice(0, 10) === selectedDate);
+  const dateCounts = monthOutings.reduce((counts, outing) => {
+    const date = String(outing.event_date).slice(0, 10);
+    counts[date] = (counts[date] || 0) + 1;
+    return counts;
+  }, {});
+
+  return (
+    <section className="calendar-page">
+      <div className="section-heading calendar-heading"><div><span className="eyebrow">PLANIFIER VOS SORTIES</span><h2>Agenda</h2></div></div>
+      <div className="calendar-toolbar">
+        <div className="calendar-scopes" role="tablist" aria-label="Sorties de l’agenda">
+          <button role="tab" aria-selected={scope === "all"} className={scope === "all" ? "filter-active" : ""} onClick={() => setScope("all")}>Toutes les sorties</button>
+          <button role="tab" aria-selected={scope === "mine"} className={scope === "mine" ? "filter-active" : ""} onClick={() => setScope("mine")}>Mes participations</button>
+        </div>
+        <div className="calendar-filters">
+          <label>Du <input type="date" value={fromDate} onChange={(event) => setFromDate(event.target.value)} /></label>
+          <label>Au <input type="date" value={toDate} min={fromDate || undefined} onChange={(event) => setToDate(event.target.value)} /></label>
+          <label>Activité <select value={activityFilter} onChange={(event) => setActivityFilter(event.target.value)}>{filters.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
+        </div>
+      </div>
+      <div className="calendar-layout">
+        <div className="calendar-month">
+          <div className="calendar-month-head"><button className="icon-button" aria-label="Mois précédent" onClick={() => { setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1)); setSelectedDate(""); }}><ChevronLeft size={18} /></button><h3>{monthLabel}</h3><button className="icon-button" aria-label="Mois suivant" onClick={() => { setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1)); setSelectedDate(""); }}><ChevronRight size={18} /></button></div>
+          <div className="calendar-grid calendar-weekdays">{["L", "M", "M", "J", "V", "S", "D"].map((day, index) => <span key={`${day}-${index}`}>{day}</span>)}</div>
+          <div className="calendar-grid">{cells.map((date, index) => date ? <button key={date} className={`calendar-day ${dateCounts[date] ? "has-events" : ""} ${selectedDate === date ? "selected" : ""}`} onClick={() => setSelectedDate(selectedDate === date ? "" : date)} aria-label={`${date}${dateCounts[date] ? `, ${dateCounts[date]} sortie(s)` : ""}`}><span>{Number(date.slice(-2))}</span>{dateCounts[date] > 0 && <i>{dateCounts[date]}</i>}</button> : <span className="calendar-empty-day" key={`empty-${index}`} />)}</div>
+          <button className="calendar-reset" onClick={() => { setSelectedDate(""); setFromDate(""); setToDate(""); setActivityFilter("all"); }}>Effacer les filtres</button>
+        </div>
+        <div className="calendar-events">
+          <div className="calendar-events-head"><div><span className="eyebrow">{selectedDate ? "SORTIES DU JOUR" : "CE MOIS-CI"}</span><h3>{selectedDate ? new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" }).format(new Date(`${selectedDate}T12:00:00`)) : monthLabel}</h3></div><span>{visibleOutings.length} sortie{visibleOutings.length !== 1 ? "s" : ""}</span></div>
+          {visibleOutings.length ? <div className="calendar-event-list">{visibleOutings.map((outing) => {
+            const activity = activities[outing.activity] || activities.hiking;
+            const ActivityIcon = activity.icon;
+            return <button key={outing.id} className="calendar-event" onClick={() => onOpenOuting(outing)}><span className={`mini-icon ${activity.tint}`}><ActivityIcon size={17} /></span><span className="calendar-event-copy"><strong>{outing.title}</strong><small>{formatDate(outing.event_date, outing.start_time)} · {outing.organizer_name}</small></span><ArrowRight size={16} /></button>;
+          })}</div> : <p className="calendar-empty">Aucune sortie sur cette période. Changez de mois ou ajustez les filtres.</p>}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function App() {
   const [user, setUser] = useState(null);
   const [outings, setOutings] = useState([]);
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [modal, setModal] = useState(null);
+  const [detailOuting, setDetailOuting] = useState(null);
+  const [page, setPage] = useState("outings");
+  const [profileId, setProfileId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [busyId, setBusyId] = useState(null);
 
   async function loadOutings() {
     const result = await api("/outings");
-    setOutings(result.outings.filter(isOutingUpcoming));
+    setOutings(result.outings);
   }
 
   useEffect(() => {
@@ -447,7 +634,7 @@ function App() {
         if (!active) return;
         setUser(result.user);
         return api("/outings").then((data) => {
-          if (active) setOutings(data.outings.filter(isOutingUpcoming));
+          if (active) setOutings(data.outings);
         });
       })
       .catch((requestError) => {
@@ -459,14 +646,22 @@ function App() {
     return () => { active = false; };
   }, []);
 
+  const upcomingOutings = useMemo(() => outings.filter(isOutingUpcoming), [outings]);
   const visibleOutings = useMemo(() => {
     const searchTerm = search.trim().toLocaleLowerCase("fr-FR");
-    return outings
+    return upcomingOutings
       .filter((outing) => filter === "all" || outing.activity === filter)
       .filter((outing) => `${outing.title} ${activities[outing.activity]?.label || ""} ${outing.route_description || ""} ${outing.organizer_name || ""} ${outing.meeting_place || ""}`
         .toLocaleLowerCase("fr-FR")
         .includes(searchTerm));
-  }, [outings, filter, search]);
+  }, [upcomingOutings, filter, search]);
+
+  function showProfile(id) {
+    setProfileId(id);
+    setPage("profile");
+    setDetailOuting(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 
   async function handleLogin(nextUser) {
     setUser(nextUser);
@@ -556,20 +751,23 @@ function App() {
   if (loading) return <div className="loading-screen"><span className="loading-mark" /><span>Chargement…</span></div>;
   if (!user) return <AuthScreen onLogin={handleLogin} initialError={error} />;
 
-  const nextOuting = outings[0];
-  const joinedCount = outings.filter((outing) => outing.user_is_joined).length;
+  const nextOuting = upcomingOutings[0];
+  const joinedCount = upcomingOutings.filter((outing) => outing.user_is_joined).length;
 
   return (
     <div className="app-shell">
       <header className="topbar">
         <div className="topbar-inner">
           <Brand dark />
-          <nav className="main-nav"><a className="nav-active" href="#sorties">Les sorties</a></nav>
-          <div className="user-menu"><div className="user-avatar">{user.fullName.trim().slice(0, 1).toUpperCase()}</div><span className="user-name">{user.fullName}</span><button className="logout-button" onClick={handleLogout} aria-label="Se déconnecter"><LogOut size={17} /></button></div>
+          <nav className="main-nav" aria-label="Navigation principale">
+            <button className={page === "outings" ? "nav-active" : ""} onClick={() => setPage("outings")}>Les sorties</button>
+            <button className={page === "calendar" ? "nav-active" : ""} onClick={() => setPage("calendar")}>Agenda</button>
+          </nav>
+          <div className="user-menu"><button className="profile-nav" onClick={() => showProfile(user.id)} aria-label={`Voir le profil de ${user.fullName}`}><span className="user-avatar">{user.fullName.trim().slice(0, 1).toUpperCase()}</span><span className="user-name">{user.fullName}</span></button><button className="logout-button" onClick={handleLogout} aria-label="Se déconnecter"><LogOut size={17} /></button></div>
         </div>
       </header>
       <main className="page-content">
-        <section className="welcome-strip">
+        {page === "outings" && <section className="welcome-strip">
           <div className="welcome-copy">
             <span className="eyebrow"><span className="eyebrow-dot" /> L’AVENTURE COMMENCE ICI</span>
             <h1>Dehors,<br /><em>on est mieux.</em></h1>
@@ -588,14 +786,14 @@ function App() {
             </svg>
             <div className="map-label map-label-top"><span className="map-live-dot" /> PARCOURS À DÉCOUVRIR</div>
           </div>
-        </section>
-        <div className="dashboard-row">
+        </section>}
+        {page === "outings" && <div className="dashboard-row">
           <div className="stats-intro"><span className="eyebrow">EN UN COUP D’ŒIL</span><h2>Votre activité</h2></div>
-          <div className="mini-stat"><span className="mini-icon green"><CalendarDays size={17} /></span><span><strong>{outings.length}</strong><small>sortie{outings.length !== 1 ? "s" : ""} à venir</small></span></div>
+          <div className="mini-stat"><span className="mini-icon green"><CalendarDays size={17} /></span><span><strong>{upcomingOutings.length}</strong><small>sortie{upcomingOutings.length !== 1 ? "s" : ""} à venir</small></span></div>
           <div className="mini-stat"><span className="mini-icon violet"><Users size={17} /></span><span><strong>{joinedCount}</strong><small>où vous participez</small></span></div>
           {nextOuting && <div className="next-callout"><span className="next-kicker"><span /> À VENIR</span><strong>{nextOuting.title}</strong><span>{formatDate(nextOuting.event_date, nextOuting.start_time)}</span><ArrowRight size={16} /></div>}
-        </div>
-        <section className="listing-section" id="sorties">
+        </div>}
+        {page === "outings" && <section className="listing-section" id="sorties">
           <div className="section-heading"><div><span className="eyebrow">SORTIES À VENIR</span><h2>Les sorties <span className="heading-count" aria-label={`${visibleOutings.length} résultat${visibleOutings.length > 1 ? "s" : ""}`}>{visibleOutings.length.toString().padStart(2, "0")}</span></h2></div><div className="search-wrap"><Search size={17} /><input aria-label="Rechercher par activité, nom, description ou lieu" placeholder="Rechercher une sortie…" value={search} onChange={(event) => setSearch(event.target.value)} /></div></div>
           <div className="filter-row"><div className="filter-tabs" role="tablist" aria-label="Filtrer par activité">{filters.map((item) => <button key={item.id} role="tab" aria-selected={filter === item.id} className={filter === item.id ? "filter-active" : ""} onClick={() => setFilter(item.id)}>{item.label}</button>)}</div><span className="sort-label"><SlidersHorizontal size={15} /> Les plus proches d’abord</span></div>
           <p className="result-summary" role="status">
@@ -603,14 +801,17 @@ function App() {
             {filter !== "all" && ` · Activité : ${filters.find((item) => item.id === filter)?.label}`}
             {search.trim() && ` · Recherche : « ${search.trim()} »`}
           </p>
-          {error && <div className="global-error" role="alert">{error}<button onClick={() => setError("")} aria-label="Fermer"><X size={15} /></button></div>}
-          {visibleOutings.length ? <div className="outing-grid">{visibleOutings.map((outing) => <OutingCard key={outing.id} outing={outing} currentUserId={user.id} busy={busyId === outing.id} onJoin={() => joinOuting(outing.id)} onLeave={() => leaveOuting(outing.id)} onEdit={() => setModal({ outing })} onDelete={() => deleteOuting(outing)} />)}</div> : (
+          {visibleOutings.length ? <div className="outing-grid">{visibleOutings.map((outing) => <OutingCard key={outing.id} outing={outing} currentUserId={user.id} busy={busyId === outing.id} onJoin={() => joinOuting(outing.id)} onLeave={() => leaveOuting(outing.id)} onEdit={() => setModal({ outing })} onDelete={() => deleteOuting(outing)} onOpen={() => setDetailOuting(outing)} onProfile={showProfile} />)}</div> : (
             <div className="empty-state"><div className="empty-icon"><Mountain size={26} /></div><h3>{search || filter !== "all" ? "Aucun résultat" : "Aucune sortie à venir"}</h3><p>{search || filter !== "all" ? "Modifiez votre recherche ou choisissez un autre filtre." : "Proposez une sortie pour la rendre visible aux adhérents."}</p>{!search && filter === "all" && <button className="button button-dark" onClick={() => setModal({ outing: null })}><Plus size={16} /> Proposer une sortie</button>}</div>
           )}
-        </section>
+        </section>}
+        {page === "calendar" && <CalendarView currentUser={user} outings={outings} onOpenOuting={setDetailOuting} />}
+        {page === "profile" && <ProfileView profileId={profileId ?? user.id} currentUser={user} outings={outings} onOpenOuting={setDetailOuting} />}
+        {error && <div className="global-error" role="alert">{error}<button onClick={() => setError("")} aria-label="Fermer"><X size={15} /></button></div>}
         <footer className="page-footer"><Brand dark /><span>Sorties outdoor entre adhérents</span></footer>
       </main>
       {modal && <OutingForm outing={modal.outing} onClose={() => setModal(null)} onSave={saveOuting} />}
+      {detailOuting && <OutingDetails outing={detailOuting} currentUserId={user.id} onClose={() => setDetailOuting(null)} onProfile={showProfile} />}
     </div>
   );
 }
