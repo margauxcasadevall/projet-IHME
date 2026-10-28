@@ -36,7 +36,12 @@ Application web Zou! de sorties outdoor entre adhérents : randonnée, course à
 
    Au premier lancement, Docker prépare les éléments nécessaires ; cela peut prendre quelques minutes. Laisser ce terminal ouvert.
 
-5. Ouvrir un navigateur et aller sur [http://localhost:8080](http://localhost:8080). Créer un compte pour essayer l’application.
+5. Ouvrir un navigateur et aller sur [http://localhost:8080](http://localhost:8080). Créer un compte ou utiliser le compte de démonstration affiché sur la page de connexion :
+
+   - E-mail : `demo@zou.fr`
+   - Mot de passe : `ZouDemo2026!`
+
+   Ce compte partagé est réinitialisé au démarrage de l’API ; évitez d’y enregistrer des informations personnelles.
 
 Pour arrêter l’application, revenir au terminal et appuyer sur **Ctrl+C**. Pour la relancer plus tard, rouvrir le terminal dans le dossier du projet et saisir `docker compose up`.
 

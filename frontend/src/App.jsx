@@ -162,6 +162,11 @@ function AuthScreen({ onLogin, initialError }) {
               {busy ? "Un instant…" : mode === "login" ? "Se connecter" : "Créer mon compte"} <ArrowRight size={17} />
             </button>
           </form>
+          <aside className="demo-credentials" aria-label="Identifiants de démonstration">
+            <p>Compte de démonstration partagé</p>
+            <span>E-mail <code>demo@zou.fr</code></span>
+            <span>Mot de passe <code>ZouDemo2026!</code></span>
+          </aside>
         </div>
       </section>
     </main>

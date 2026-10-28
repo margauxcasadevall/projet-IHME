@@ -1,6 +1,8 @@
 import { afterEach, test } from "node:test";
 import assert from "node:assert/strict";
+import bcrypt from "bcryptjs";
 import { initializeSessionSecret } from "../src/auth.js";
+import { demoCredentials, initializeDemoAccount } from "../src/demo.js";
 
 const originalJwtSecret = process.env.JWT_SECRET;
 
@@ -57,4 +59,29 @@ test("creates and reuses a random secret stored in PostgreSQL", async () => {
   delete process.env.JWT_SECRET;
   await initializeSessionSecret(database);
   assert.equal(process.env.JWT_SECRET, firstSecret);
+});
+
+test("initializes a usable demo account with a hashed password", async () => {
+  let insertedUser;
+  const database = {
+    async query(sql, values) {
+      assert.match(sql, /ON CONFLICT \(email\) DO UPDATE/);
+      insertedUser = {
+        fullName: values[0],
+        email: values[1],
+        passwordHash: values[2]
+      };
+      return { rows: [] };
+    }
+  };
+
+  await initializeDemoAccount(database);
+
+  assert.equal(insertedUser.fullName, demoCredentials.fullName);
+  assert.equal(insertedUser.email, demoCredentials.email);
+  assert.notEqual(insertedUser.passwordHash, demoCredentials.password);
+  assert.equal(await bcrypt.compare(
+    demoCredentials.password,
+    insertedUser.passwordHash
+  ), true);
 });
