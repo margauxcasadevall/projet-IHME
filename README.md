@@ -11,6 +11,44 @@ Application web Zou! de sorties outdoor entre adhérents : randonnée, course à
 - Affichage de la date, de l’heure, du point de rendez-vous, du tracé GPX, de la distance, de l’allure et des places disponibles.
 - Capacité maximale définie par l’organisateur. Une sortie complète ne peut plus recevoir d’inscriptions ; la liste d’attente n’est pas encore incluse.
 
+## Besoin et scénario utilisateur
+
+### Utilisateur type
+
+L’utilisateur type est un étudiant ou une étudiante en STAPS qui aime les activités de plein air et souhaite pratiquer avec d’autres adhérents. Il ou elle peut organiser une sortie ou rejoindre une sortie proposée par quelqu’un d’autre.
+
+### Besoin
+
+Les adhérents ont besoin d’un endroit commun pour trouver les sorties à venir et connaître rapidement les informations utiles avant de s’inscrire : activité, date, heure, distance, allure ou vitesse, lieu de rendez-vous et places restantes. L’application permet aussi à un adhérent de proposer et gérer sa propre sortie.
+
+### Scénario à présenter en une minute
+
+Camille, étudiante en STAPS et adhérente, veut faire une randonnée avec d’autres personnes. Elle se connecte, filtre les sorties sur « Randonnée », puis consulte les dates, distances, lieux de rendez-vous et places restantes. Elle ouvre le lien Google Maps d’une sortie qui lui convient et clique sur « Rejoindre ». La sortie apparaît alors comme complète ou avec une place de moins, et Camille est indiquée comme inscrite. Elle peut aussi proposer une sortie en remplissant le formulaire dédié.
+
+## Utiliser l’interface : entrées et résultats
+
+### Se connecter ou créer un compte
+
+- **Entrées :** adresse e-mail et mot de passe ; pour une inscription, nom et prénom également.
+- **Résultat :** accès à la liste des sorties. En cas d’erreur (par exemple des identifiants incorrects ou une adresse e-mail déjà utilisée), un message est affiché dans le formulaire.
+
+### Rechercher et choisir une sortie
+
+- **Entrées :** mots-clés dans le champ de recherche et choix d’un filtre d’activité : randonnée, course, trail ou vélo.
+- **Résultat :** les sorties à venir correspondantes sont affichées, de la plus proche à la plus éloignée. Si aucune sortie ne correspond, l’interface propose de modifier la recherche ou le filtre.
+- **Informations affichées :** nom, activité, date et heure, organisateur, lieu avec lien Google Maps, distance en km, allure moyenne et son unité, nombre de participants, places restantes et, si disponibles, dénivelés et tracé GPX téléchargeable.
+- **Actions :** rejoindre ou quitter une sortie. L’organisateur peut modifier ou annuler sa sortie. Une sortie complète ne peut plus être rejointe.
+
+### Proposer ou modifier une sortie
+
+Le formulaire demande les entrées suivantes :
+
+- **Obligatoires :** nom, activité, lieu et lien Google Maps du rendez-vous, distance en km, date, heure, allure ou vitesse moyenne, nombre maximal de participants.
+- **Facultatives :** description et informations pratiques, lien cartographique, tracé GPX (fichier de 1 Mo maximum ou lien, mais pas les deux), dénivelé positif et négatif en mètres.
+- **Unités de l’allure moyenne :** min/km pour la course et le trail ; km/h pour la randonnée et le vélo. Cette valeur est saisie par l’organisateur puis affichée sur la fiche ; l’application ne la calcule pas.
+
+Après validation, la sortie est enregistrée et apparaît dans la liste avec ses informations et le nombre de places disponibles. Les champs invalides (par exemple une distance non positive, un lien de rendez-vous non sécurisé ou une date passée) déclenchent un message explicatif. Lors d’une modification, la capacité ne peut pas être abaissée sous le nombre de personnes déjà inscrites ; l’organisateur compte parmi les participants.
+
 ## Technologies
 
 - **Frontend :** React avec Vite.
@@ -20,32 +58,16 @@ Application web Zou! de sorties outdoor entre adhérents : randonnée, course à
 
 ## Voir l’application sur son ordinateur
 
-1. Installer **Docker Desktop**, puis l’ouvrir depuis le dossier **Applications**. Attendre que Docker indique qu’il est démarré.
-2. Ouvrir le projet dans VS Code. Dans la barre de menus, choisir **Terminal > Nouveau terminal**.
-3. Dans le terminal en bas de la fenêtre, saisir :
+Prérequis : **Docker Desktop** installé et démarré. À la racine du projet, lancer :
 
-   ```sh
-   cp .env.example .env
-   ```
+```sh
+cp .env.example .env
+docker compose up --build
+```
 
-4. Dans le même terminal, saisir :
+Ouvrir ensuite [http://localhost:8080](http://localhost:8080) et créer un compte, ou se connecter avec le compte de démonstration affiché sur la page. Ce compte est partagé et réinitialisé au démarrage de l’API ; ne pas y enregistrer d’informations personnelles.
 
-   ```sh
-   docker compose up --build
-   ```
-
-   Au premier lancement, Docker prépare les éléments nécessaires ; cela peut prendre quelques minutes. Laisser ce terminal ouvert.
-
-5. Ouvrir un navigateur et aller sur [http://localhost:8080](http://localhost:8080). Créer un compte ou utiliser le compte de démonstration affiché sur la page de connexion :
-
-   - E-mail : `demo@zou.fr`
-   - Mot de passe : `ZouDemo2026!`
-
-   Ce compte partagé est réinitialisé au démarrage de l’API ; évitez d’y enregistrer des informations personnelles.
-
-Pour arrêter l’application, revenir au terminal et appuyer sur **Ctrl+C**. Pour la relancer plus tard, rouvrir le terminal dans le dossier du projet et saisir `docker compose up`.
-
-Docker conserve les données du projet quand on arrête l’application.
+Arrêter avec **Ctrl+C** dans le terminal. Pour relancer plus tard, exécuter `docker compose up`. Les données sont conservées à l’arrêt.
 
 ## Lancer en développement sans Docker
 
