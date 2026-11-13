@@ -59,6 +59,15 @@ Après validation, la sortie est enregistrée et apparaît dans la liste avec se
 - **Base de données :** PostgreSQL.
 - **Conteneurisation :** Docker Compose.
 
+Le frontend sépare l’accès à l’API, les données partagées et les principales vues React dans des modules dédiés. Les tests frontend vérifient la connexion, la recherche, les filtres et l’inscription aux sorties.
+
+Pour lancer les tests :
+
+```sh
+npm test --prefix backend
+npm test --prefix frontend
+```
+
 ## Exemple de données et requête SQL
 
 Jeu d’exemple entièrement fictif, automatiquement ajouté une seule fois à la base au premier démarrage de l’API. Il crée les cinq profils, les sept sorties et les inscriptions ci-dessous ; les sorties apparaissent donc dans l’application tant que leurs dates sont à venir. Les lieux de rendez-vous sont laissés à préciser. Les adresses `example.test` et les profils ne sont pas des comptes destinés à la connexion : leurs mots de passe aléatoires ne sont pas connus. Les numéros d’identification du tableau sont illustratifs et peuvent différer de ceux attribués par PostgreSQL. Les mentions de genre et d’activité préférée restent descriptives et ne sont pas enregistrées dans la base.
