@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import App from "./App.jsx";
 
@@ -23,6 +23,9 @@ function makeOutings(userJoined = false) {
       max_participants: 3,
       organizer_name: "Léa Fournier",
       participant_count: userJoined ? 2 : 1,
+      waitlist_count: 0,
+      user_is_waitlisted: false,
+      waitlist_position: null,
       user_is_joined: userJoined,
       participants: userJoined
         ? [{ id: 1, fullName: currentUser.fullName }, { id: 2, fullName: "Léa Fournier" }]
@@ -43,6 +46,9 @@ function makeOutings(userJoined = false) {
       max_participants: 2,
       organizer_name: "Hugo Bernard",
       participant_count: 2,
+      waitlist_count: 0,
+      user_is_waitlisted: false,
+      waitlist_position: null,
       user_is_joined: false,
       participants: [{ id: 3, fullName: "Hugo Bernard" }, { id: 4, fullName: "Sami Diallo" }]
     }
@@ -59,9 +65,13 @@ function jsonResponse(body, status = 200) {
 
 describe("parcours des sorties", () => {
   let outings;
+  let userIsWaitlisted;
+  let notifications;
 
   beforeEach(() => {
     outings = makeOutings();
+    userIsWaitlisted = false;
+    notifications = [];
     vi.spyOn(window, "scrollTo").mockImplementation(() => {});
     vi.stubGlobal("fetch", vi.fn(async (url, options = {}) => {
       const path = new URL(url, "http://localhost").pathname;
@@ -71,12 +81,35 @@ describe("parcours des sorties", () => {
       if (path.endsWith("/api/auth/login") && options.method === "POST") {
         return jsonResponse({ user: currentUser });
       }
+      if (path.endsWith("/api/notifications") && !options.method) {
+        return jsonResponse({
+          notifications,
+          unreadCount: notifications.filter((notification) => !notification.read_at).length
+        });
+      }
+      if (path.endsWith("/api/notifications/100/read") && options.method === "PATCH") {
+        notifications = notifications.map((notification) => (
+          notification.id === 100 ? { ...notification, read_at: "2026-11-13T10:00:00Z" } : notification
+        ));
+        return jsonResponse({ message: "Notification marquée comme lue." });
+      }
       if (path.endsWith("/api/outings") && !options.method) {
+        outings[1].waitlist_count = userIsWaitlisted ? 1 : 0;
+        outings[1].user_is_waitlisted = userIsWaitlisted;
+        outings[1].waitlist_position = userIsWaitlisted ? 1 : null;
         return jsonResponse({ outings });
       }
       if (path.endsWith("/api/outings/10/participants") && options.method === "POST") {
         outings = makeOutings(true);
         return jsonResponse({ message: "Inscription confirmée." }, 201);
+      }
+      if (path.endsWith("/api/outings/11/participants") && options.method === "POST") {
+        userIsWaitlisted = true;
+        return jsonResponse({ message: "Inscription sur liste d’attente confirmée." }, 202);
+      }
+      if (path.endsWith("/api/outings/11/participants/me") && options.method === "DELETE") {
+        userIsWaitlisted = false;
+        return jsonResponse(null, 204);
       }
       return jsonResponse({ error: "Route de test inattendue." }, 404);
     }));
@@ -116,11 +149,10 @@ describe("parcours des sorties", () => {
     expect(screen.queryByRole("button", { name: "Randonnée au Garlaban" })).toBeNull();
   });
 
-  it("permet de rejoindre une sortie disponible et désactive celle qui est complète", async () => {
+  it("permet de rejoindre une sortie disponible", async () => {
     const user = await logIn();
 
-    expect(screen.getByRole("button", { name: "Complet" }).disabled).toBe(true);
-    await user.click(screen.getByRole("button", { name: /Rejoindre/ }));
+    await user.click(screen.getByRole("button", { name: "Rejoindre" }));
 
     await waitFor(() => {
       expect(screen.getByRole("button", { name: /Inscrit·e/ })).toBeTruthy();
@@ -129,7 +161,35 @@ describe("parcours des sorties", () => {
       expect.stringContaining("/api/outings/10/participants"),
       expect.objectContaining({ method: "POST" })
     );
-    expect(screen.getByRole("button", { name: "Complet" }).disabled).toBe(true);
+  });
+
+  it("permet de rejoindre une sortie disponible depuis sa fiche détaillée", async () => {
+    const user = await logIn();
+
+    await user.click(screen.getByRole("button", { name: "Randonnée au Garlaban" }));
+    const details = screen.getByRole("dialog", { name: "Randonnée au Garlaban" });
+    await user.click(within(details).getByRole("button", { name: "Rejoindre" }));
+
+    expect(await within(details).findByRole("button", { name: /Inscrit·e/ })).toBeTruthy();
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining("/api/outings/10/participants"),
+      expect.objectContaining({ method: "POST" })
+    );
+  });
+
+  it("permet de rejoindre puis de quitter la liste d’attente d’une sortie complète", async () => {
+    const user = await logIn();
+
+    await user.click(screen.getByRole("button", { name: "Rejoindre la liste d’attente" }));
+    expect(await screen.findByRole("button", { name: "En attente · 1" })).toBeTruthy();
+    expect(screen.getByText("Complet · 1 en attente")).toBeTruthy();
+
+    await user.click(screen.getByRole("button", { name: "En attente · 1" }));
+    expect(await screen.findByRole("button", { name: "Rejoindre la liste d’attente" })).toBeTruthy();
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining("/api/outings/11/participants/me"),
+      expect.objectContaining({ method: "DELETE" })
+    );
   });
 
   it("sépare les sorties passées des inscriptions à venir dans le profil", async () => {
@@ -166,5 +226,41 @@ describe("parcours des sorties", () => {
     expect(screen.getByRole("button", { name: /Randonnée au Garlaban/ })).toBeTruthy();
     expect(screen.queryByRole("button", { name: /Sortie passée/ })).toBeNull();
     expect(screen.queryByRole("button", { name: /Sortie organisée par Camille/ })).toBeNull();
+  });
+
+  it("affiche les sorties en liste d’attente dans les inscriptions à venir du profil", async () => {
+    userIsWaitlisted = true;
+    const user = await logIn();
+
+    await user.click(screen.getByRole("button", { name: "Voir le profil de Camille Martin" }));
+    await user.click(screen.getByRole("tab", { name: /Inscriptions à venir/ }));
+
+    expect(screen.getByRole("button", { name: /Vélo sur la Côte Bleue/ })).toBeTruthy();
+    expect(screen.getByText(/En attente \(1\)/)).toBeTruthy();
+  });
+
+  it("affiche les notifications non lues et ouvre la sortie associée", async () => {
+    notifications = [{
+      id: 100,
+      outing_id: 10,
+      message: "Une place s’est libérée : vous êtes inscrit·e à « Randonnée au Garlaban ».",
+      created_at: "2026-11-13T10:00:00Z",
+      read_at: null,
+      outing_title: "Randonnée au Garlaban",
+      event_date: "2099-06-15",
+      start_time: "09:00"
+    }];
+    const user = await logIn();
+
+    await user.click(screen.getByRole("button", { name: "Notifications, 1 non lue" }));
+    const inbox = screen.getByRole("region", { name: "Centre de notifications" });
+    await user.click(within(inbox).getByRole("button", { name: /Une place s’est libérée/ }));
+
+    expect(await screen.findByRole("dialog", { name: "Randonnée au Garlaban" })).toBeTruthy();
+    expect(await screen.findByRole("button", { name: "Notifications" })).toBeTruthy();
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining("/api/notifications/100/read"),
+      expect.objectContaining({ method: "PATCH" })
+    );
   });
 });

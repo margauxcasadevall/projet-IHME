@@ -110,6 +110,14 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   font-size: 12px;
   border-radius: 10px;
 }
+.button-waitlisted {
+  min-height: 37px;
+  padding: 0 12px;
+  color: #67512d;
+  background: #f3ead4;
+  font-size: 12px;
+  border-radius: 10px;
+}
 .button-delete {
   min-height: 34px;
   padding: 0 10px;
@@ -310,6 +318,64 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   border-radius: 2px;
 }
 .user-menu { display: flex; align-items: center; gap: 10px; margin-left: auto; color: #4d564e; font-size: 11px; font-weight: 600; }
+.notification-menu { position: relative; }
+.notification-toggle {
+  width: 36px;
+  height: 36px;
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  color: var(--muted);
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+}
+.notification-toggle:hover { color: var(--pine); background: rgba(25, 55, 47, 0.06); }
+.notification-badge {
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  position: absolute;
+  top: 0;
+  right: -1px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  border: 2px solid #f7f5ef;
+  border-radius: 999px;
+  background: #ad5144;
+  font-size: 8px;
+  line-height: 1;
+}
+.notification-panel {
+  width: min(360px, calc(100vw - 28px));
+  max-height: min(460px, calc(100vh - 82px));
+  overflow: hidden auto;
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 13px);
+  right: -52px;
+  color: var(--pine);
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  background: var(--panel);
+  box-shadow: 0 18px 42px rgba(14, 23, 20, 0.2);
+}
+.notification-panel-head { padding: 14px 15px 11px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); }
+.notification-panel-head h2 { margin: 0; font: 700 14px "Manrope", sans-serif; }
+.notification-panel-head button { display: inline-flex; align-items: center; gap: 5px; padding: 4px; color: #526b43; border: 0; background: transparent; font-size: 10px; font-weight: 700; }
+.notification-panel ul { margin: 0; padding: 0; list-style: none; }
+.notification-panel li + li { border-top: 1px solid rgba(29, 43, 39, 0.06); }
+.notification-item { width: 100%; padding: 13px 15px; display: flex; align-items: flex-start; gap: 9px; color: var(--muted); border: 0; background: transparent; text-align: left; }
+.notification-item:hover { background: #f5f6ef; }
+.notification-item > span:last-child { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.notification-item strong { color: #4d564e; font-size: 10px; font-weight: 500; line-height: 1.5; }
+.notification-item small { color: #838b7d; font-size: 9px; line-height: 1.5; }
+.notification-unread strong { color: var(--pine); font-weight: 700; }
+.notification-dot { width: 7px; height: 7px; flex: 0 0 auto; margin-top: 5px; border-radius: 50%; background: transparent; }
+.notification-unread .notification-dot { background: #829e54; }
+.notification-empty { margin: 0; padding: 22px 15px; color: var(--muted); font-size: 11px; text-align: center; }
 .profile-nav { display: inline-flex; align-items: center; gap: 9px; padding: 0; color: inherit; border: 0; background: transparent; font-size: inherit; font-weight: inherit; }
 .profile-nav:hover .user-name { color: var(--forest); text-decoration: underline; text-underline-offset: 3px; }
 .user-avatar, .avatar {
@@ -943,6 +1009,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .brand-mark { width: 34px; height: 28px; }
   .brand-word { font-size: 24px; }
   .topbar .brand-word { font-size: 22px; }
+  .notification-panel { right: -39px; }
   .welcome-strip .eyebrow { font-size: 8px; }
   .outing-form { grid-template-columns: 1fr; }
   .outing-form label { grid-column: 1 / -1; }

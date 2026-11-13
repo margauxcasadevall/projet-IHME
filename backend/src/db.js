@@ -54,6 +54,22 @@ export async function initializeDatabase() {
       PRIMARY KEY (outing_id, user_id)
     );
 
+    CREATE TABLE IF NOT EXISTS outing_waitlist (
+      outing_id BIGINT NOT NULL REFERENCES outings(id) ON DELETE CASCADE,
+      user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      joined_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
+      PRIMARY KEY (outing_id, user_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS app_notifications (
+      id BIGSERIAL PRIMARY KEY,
+      user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      outing_id BIGINT NOT NULL REFERENCES outings(id) ON DELETE CASCADE,
+      message TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      read_at TIMESTAMPTZ
+    );
+
     CREATE TABLE IF NOT EXISTS app_seeds (
       name TEXT PRIMARY KEY,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -61,5 +77,7 @@ export async function initializeDatabase() {
 
     CREATE INDEX IF NOT EXISTS outings_event_date_idx ON outings(event_date, start_time);
     CREATE INDEX IF NOT EXISTS outing_participants_user_idx ON outing_participants(user_id);
+    CREATE INDEX IF NOT EXISTS outing_waitlist_order_idx ON outing_waitlist(outing_id, joined_at, user_id);
+    CREATE INDEX IF NOT EXISTS app_notifications_user_created_idx ON app_notifications(user_id, created_at DESC);
   `);
 }

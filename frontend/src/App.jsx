@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   ArrowRight,
+  Bell,
   CalendarDays,
+  CheckCheck,
   LogOut,
   MapPin,
   Mountain,
@@ -194,6 +196,9 @@ function OutingForm({ outing, onClose, onSave }) {
 function App() {
   const [user, setUser] = useState(null);
   const [outings, setOutings] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [modal, setModal] = useState(null);
@@ -207,6 +212,13 @@ function App() {
   async function loadOutings() {
     const result = await api("/outings");
     setOutings(result.outings);
+    return result.outings;
+  }
+
+  async function loadNotifications() {
+    const result = await api("/notifications");
+    setNotifications(result.notifications);
+    setUnreadNotificationCount(result.unreadCount);
   }
 
   useEffect(() => {
@@ -215,8 +227,11 @@ function App() {
       .then((result) => {
         if (!active) return;
         setUser(result.user);
-        return api("/outings").then((data) => {
-          if (active) setOutings(data.outings);
+        return Promise.all([api("/outings"), api("/notifications")]).then(([data, inbox]) => {
+          if (!active) return;
+          setOutings(data.outings);
+          setNotifications(inbox.notifications);
+          setUnreadNotificationCount(inbox.unreadCount);
         });
       })
       .catch((requestError) => {
@@ -228,7 +243,23 @@ function App() {
     return () => { active = false; };
   }, []);
 
+  useEffect(() => {
+    if (!user) return undefined;
+    const refresh = () => {
+      loadNotifications().catch((requestError) => setError(requestError.message));
+    };
+    const intervalId = window.setInterval(refresh, 30000);
+    window.addEventListener("focus", refresh);
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", refresh);
+    };
+  }, [user]);
+
   const upcomingOutings = useMemo(() => outings.filter(isOutingUpcoming), [outings]);
+  const currentDetailOuting = detailOuting
+    ? outings.find((outing) => Number(outing.id) === Number(detailOuting.id)) || detailOuting
+    : null;
   const visibleOutings = useMemo(() => {
     const searchTerm = search.trim().toLocaleLowerCase("fr-FR");
     return upcomingOutings
@@ -249,7 +280,7 @@ function App() {
     setUser(nextUser);
     setError("");
     try {
-      await loadOutings();
+      await Promise.all([loadOutings(), loadNotifications()]);
     } catch (requestError) {
       setError(requestError.message);
     }
@@ -261,6 +292,9 @@ function App() {
       await api("/auth/logout", { method: "POST" });
       setUser(null);
       setOutings([]);
+      setNotifications([]);
+      setUnreadNotificationCount(0);
+      setNotificationsOpen(false);
     } catch (requestError) {
       setError(requestError.message);
     }
@@ -295,7 +329,7 @@ function App() {
           )
         })
       });
-      await loadOutings();
+      await Promise.all([loadOutings(), loadNotifications()]);
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -308,11 +342,33 @@ function App() {
     setError("");
     try {
       await api(`/outings/${id}/participants/me`, { method: "DELETE" });
-      await loadOutings();
+      await Promise.all([loadOutings(), loadNotifications()]);
     } catch (requestError) {
       setError(requestError.message);
     } finally {
       setBusyId(null);
+    }
+  }
+
+  async function markNotificationRead(notification) {
+    setNotificationsOpen(false);
+    setError("");
+    try {
+      await api(`/notifications/${notification.id}/read`, { method: "PATCH" });
+      const [freshOutings] = await Promise.all([loadOutings(), loadNotifications()]);
+      setDetailOuting(freshOutings.find((outing) => Number(outing.id) === Number(notification.outing_id)) || null);
+    } catch (requestError) {
+      setError(requestError.message);
+    }
+  }
+
+  async function markAllNotificationsRead() {
+    setError("");
+    try {
+      await api("/notifications/read-all", { method: "PATCH" });
+      await loadNotifications();
+    } catch (requestError) {
+      setError(requestError.message);
     }
   }
 
@@ -345,7 +401,43 @@ function App() {
             <button className={page === "outings" ? "nav-active" : ""} onClick={() => setPage("outings")}>Les sorties</button>
             <button className={page === "calendar" ? "nav-active" : ""} onClick={() => setPage("calendar")}>Agenda</button>
           </nav>
-          <div className="user-menu"><button className="profile-nav" onClick={() => showProfile(user.id)} aria-label={`Voir le profil de ${user.fullName}`}><span className="user-avatar">{user.fullName.trim().slice(0, 1).toUpperCase()}</span><span className="user-name">{user.fullName}</span></button><button className="logout-button" onClick={handleLogout} aria-label="Se déconnecter"><LogOut size={17} /></button></div>
+          <div className="user-menu">
+            <div className="notification-menu">
+              <button
+                className="notification-toggle"
+                aria-label={`Notifications${unreadNotificationCount ? `, ${unreadNotificationCount} non lue${unreadNotificationCount > 1 ? "s" : ""}` : ""}`}
+                aria-expanded={notificationsOpen}
+                onClick={() => setNotificationsOpen((open) => !open)}
+              >
+                <Bell size={18} />
+                {unreadNotificationCount > 0 && <span className="notification-badge">{unreadNotificationCount > 99 ? "99+" : unreadNotificationCount}</span>}
+              </button>
+              {notificationsOpen && <section className="notification-panel" aria-label="Centre de notifications">
+                <div className="notification-panel-head">
+                  <h2>Notifications</h2>
+                  {unreadNotificationCount > 0 && <button onClick={markAllNotificationsRead}><CheckCheck size={14} /> Tout lire</button>}
+                </div>
+                {notifications.length ? <ul>
+                  {notifications.map((notification) => (
+                    <li key={notification.id}>
+                      <button
+                        className={`notification-item ${notification.read_at ? "" : "notification-unread"}`}
+                        onClick={() => markNotificationRead(notification)}
+                      >
+                        <span className="notification-dot" />
+                        <span>
+                          <strong>{notification.message}</strong>
+                          <small>{notification.outing_title} · {formatDate(notification.event_date, notification.start_time)}</small>
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul> : <p className="notification-empty">Aucune notification pour le moment.</p>}
+              </section>}
+            </div>
+            <button className="profile-nav" onClick={() => showProfile(user.id)} aria-label={`Voir le profil de ${user.fullName}`}><span className="user-avatar">{user.fullName.trim().slice(0, 1).toUpperCase()}</span><span className="user-name">{user.fullName}</span></button>
+            <button className="logout-button" onClick={handleLogout} aria-label="Se déconnecter"><LogOut size={17} /></button>
+          </div>
         </div>
       </header>
       <main className="page-content">
@@ -393,7 +485,15 @@ function App() {
         <footer className="page-footer"><Brand dark /><span>Sorties outdoor entre adhérents</span></footer>
       </main>
       {modal && <OutingForm outing={modal.outing} onClose={() => setModal(null)} onSave={saveOuting} />}
-      {detailOuting && <OutingDetails outing={detailOuting} currentUserId={user.id} onClose={() => setDetailOuting(null)} onProfile={showProfile} />}
+      {currentDetailOuting && <OutingDetails
+        outing={currentDetailOuting}
+        currentUserId={user.id}
+        busy={busyId === currentDetailOuting.id}
+        onJoin={() => joinOuting(currentDetailOuting.id)}
+        onLeave={() => leaveOuting(currentDetailOuting.id)}
+        onClose={() => setDetailOuting(null)}
+        onProfile={showProfile}
+      />}
     </div>
   );
 }

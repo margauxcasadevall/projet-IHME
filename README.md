@@ -10,9 +10,10 @@ Application web Zou! de sorties outdoor entre adhérents : randonnée, course à
 - Agenda mensuel des sorties et des participations, filtrable par période et par activité.
 - Fiche détaillée par sortie avec parcours, dénivelés, allure, lieu de rendez-vous et liste des participants.
 - Création, modification et annulation de ses propres sorties.
-- Inscription et désinscription aux sorties ; l’organisateur compte parmi les participants.
+- Inscription et désinscription aux sorties ; l’organisateur compte parmi les participants. Si une sortie est complète, les adhérents peuvent rejoindre la liste d’attente ; une place libérée revient automatiquement à la première personne de la liste.
 - Affichage de la date, de l’heure, du point de rendez-vous, du tracé GPX, de la distance, de l’allure et des places disponibles ; chaque activité dispose d’un motif visuel distinct.
-- Capacité maximale définie par l’organisateur. Une sortie complète ne peut plus recevoir d’inscriptions ; la liste d’attente n’est pas encore incluse.
+- Capacité maximale définie par l’organisateur. Les personnes en attente voient leur position et peuvent quitter la liste à tout moment.
+- Notification conservée dans le compte lorsqu’une personne est automatiquement inscrite après la libération d’une place ; elle apparaît dans le centre de notifications à la prochaine connexion.
 
 ## Besoin et scénario utilisateur
 
@@ -40,7 +41,8 @@ Camille, étudiante en STAPS et adhérente, veut faire une randonnée avec d’a
 - **Entrées :** mots-clés dans le champ de recherche et choix d’un filtre d’activité : randonnée, course, trail ou vélo.
 - **Résultat :** les sorties à venir correspondantes sont affichées, de la plus proche à la plus éloignée. Si aucune sortie ne correspond, l’interface propose de modifier la recherche ou le filtre.
 - **Informations affichées :** nom, activité, date et heure, organisateur, lieu avec lien Google Maps, distance en km, allure moyenne et son unité, nombre de participants, places restantes et, si disponibles, dénivelés et tracé GPX téléchargeable.
-- **Actions :** rejoindre ou quitter une sortie. L’organisateur peut modifier ou annuler sa sortie. Une sortie complète ne peut plus être rejointe.
+- **Actions :** rejoindre ou quitter une sortie, ou rejoindre/quitter la liste d’attente si elle est complète. La première personne en attente est inscrite automatiquement lorsqu’une place se libère. La position dans la liste est visible sur la sortie et dans les inscriptions à venir du profil. L’organisateur peut modifier ou annuler sa sortie.
+- **Notification :** après la promotion, une notification est enregistrée dans le compte avec le nom, la date et l’heure de la sortie. Le badge du centre de notifications indique les messages non lus. La notification reste disponible à la prochaine connexion jusqu’à ce qu’elle soit marquée comme lue.
 
 ### Proposer ou modifier une sortie
 
@@ -189,4 +191,4 @@ Les activités de course à pied et de trail utilisent une allure moyenne en **m
 
 Les dates et heures sont interprétées dans le fuseau local du navigateur. Un fuseau horaire propre à chaque sortie n’est pas encore enregistré ; c’est à préciser si les adhérents utilisent plusieurs fuseaux.
 
-Une liste d’attente et la validation des adhésions par un administrateur pourront être envisagées dans une prochaine version.
+La validation des adhésions par un administrateur pourra être envisagée dans une prochaine version.

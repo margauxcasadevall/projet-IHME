@@ -19,6 +19,7 @@ import {
   validateOuting,
   validateRegistration
 } from "./validation.js";
+import { promoteWaitingList } from "./waitlist.js";
 
 const hasDatabaseUrl = Boolean(process.env.DATABASE_URL);
 const hasPostgresSettings = Boolean(
@@ -126,6 +127,68 @@ app.get("/api/auth/me", requireAuth, async (request, response, next) => {
   }
 });
 
+app.get("/api/notifications", requireAuth, async (request, response, next) => {
+  try {
+    const [notifications, unread] = await Promise.all([
+      pool.query(
+        `SELECT n.id, n.outing_id, n.message, n.created_at, n.read_at,
+                o.title AS outing_title, o.event_date,
+                TO_CHAR(o.start_time, 'HH24:MI') AS start_time
+         FROM app_notifications n
+         JOIN outings o ON o.id = n.outing_id
+         WHERE n.user_id = $1
+         ORDER BY n.created_at DESC, n.id DESC
+         LIMIT 50`,
+        [request.user.id]
+      ),
+      pool.query(
+        "SELECT COUNT(*)::int AS count FROM app_notifications WHERE user_id = $1 AND read_at IS NULL",
+        [request.user.id]
+      )
+    ]);
+    return response.json({
+      notifications: notifications.rows,
+      unreadCount: unread.rows[0].count
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+app.patch("/api/notifications/read-all", requireAuth, async (request, response, next) => {
+  try {
+    const result = await pool.query(
+      "UPDATE app_notifications SET read_at = NOW() WHERE user_id = $1 AND read_at IS NULL",
+      [request.user.id]
+    );
+    return response.json({ updatedCount: result.rowCount });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+app.patch("/api/notifications/:id/read", requireAuth, async (request, response, next) => {
+  const id = Number(request.params.id);
+  if (!Number.isSafeInteger(id) || id < 1) {
+    return response.status(400).json({ error: "Notification invalide." });
+  }
+  try {
+    const result = await pool.query(
+      `UPDATE app_notifications
+       SET read_at = COALESCE(read_at, NOW())
+       WHERE id = $1 AND user_id = $2
+       RETURNING id`,
+      [id, request.user.id]
+    );
+    if (result.rowCount === 0) {
+      return response.status(404).json({ error: "Notification introuvable." });
+    }
+    return response.json({ message: "Notification marquée comme lue." });
+  } catch (error) {
+    return next(error);
+  }
+});
+
 app.get("/api/outings", requireAuth, async (request, response, next) => {
   try {
     const result = await pool.query(
@@ -138,6 +201,24 @@ app.get("/api/outings", requireAuth, async (request, response, next) => {
               u.full_name AS organizer_name,
               COUNT(p.user_id)::int AS participant_count,
               COALESCE(BOOL_OR(p.user_id = $1), FALSE) AS user_is_joined,
+              (SELECT COUNT(*)::int FROM outing_waitlist waiting
+               WHERE waiting.outing_id = o.id) AS waitlist_count,
+              EXISTS (SELECT 1 FROM outing_waitlist waiting
+                      WHERE waiting.outing_id = o.id AND waiting.user_id = $1)
+                AS user_is_waitlisted,
+              CASE WHEN EXISTS (
+                SELECT 1 FROM outing_waitlist mine
+                WHERE mine.outing_id = o.id AND mine.user_id = $1
+              ) THEN (
+                SELECT COUNT(*)::int + 1
+                FROM outing_waitlist earlier
+                WHERE earlier.outing_id = o.id
+                  AND (earlier.joined_at, earlier.user_id) < (
+                    SELECT mine.joined_at, mine.user_id
+                    FROM outing_waitlist mine
+                    WHERE mine.outing_id = o.id AND mine.user_id = $1
+                  )
+              ) END AS waitlist_position,
               COALESCE(
                 json_agg(json_build_object('id', participant.id, 'fullName', participant.full_name)
                          ORDER BY participant.full_name)
@@ -291,6 +372,7 @@ app.patch("/api/outings/:id", requireAuth, async (request, response, next) => {
         id
       ]
     );
+    await promoteWaitingList(client, id, outing.maxParticipants);
     await client.query("COMMIT");
     return response.status(204).end();
   } catch (error) {
@@ -354,21 +436,41 @@ app.post("/api/outings/:id/participants", requireAuth, async (request, response,
       await client.query("ROLLBACK");
       return response.status(409).json({ error: "Cette sortie a déjà commencé ou la date est invalide." });
     }
+    await promoteWaitingList(client, id, outingResult.rows[0].max_participants);
     const existing = await client.query(
       "SELECT 1 FROM outing_participants WHERE outing_id = $1 AND user_id = $2",
       [id, request.user.id]
     );
     if (existing.rowCount > 0) {
-      await client.query("ROLLBACK");
-      return response.status(409).json({ error: "Vous êtes déjà inscrit à cette sortie." });
+      await client.query("COMMIT");
+      return response.json({ message: "Vous êtes déjà inscrit à cette sortie." });
+    }
+    const alreadyWaiting = await client.query(
+      "SELECT 1 FROM outing_waitlist WHERE outing_id = $1 AND user_id = $2",
+      [id, request.user.id]
+    );
+    if (alreadyWaiting.rowCount > 0) {
+      await client.query("COMMIT");
+      return response.json({ message: "Vous êtes déjà sur la liste d’attente." });
     }
     const count = await client.query(
       "SELECT COUNT(*)::int AS count FROM outing_participants WHERE outing_id = $1",
       [id]
     );
     if (count.rows[0].count >= outingResult.rows[0].max_participants) {
-      await client.query("ROLLBACK");
-      return response.status(409).json({ error: "Cette sortie est complète." });
+      await client.query(
+        "INSERT INTO outing_waitlist (outing_id, user_id) VALUES ($1, $2)",
+        [id, request.user.id]
+      );
+      const position = await client.query(
+        "SELECT COUNT(*)::int AS count FROM outing_waitlist WHERE outing_id = $1",
+        [id]
+      );
+      await client.query("COMMIT");
+      return response.status(202).json({
+        message: "Vous êtes inscrit·e sur la liste d’attente.",
+        waitlistPosition: position.rows[0].count
+      });
     }
     await client.query(
       "INSERT INTO outing_participants (outing_id, user_id) VALUES ($1, $2)",
@@ -395,27 +497,51 @@ app.delete("/api/outings/:id/participants/me", requireAuth, async (request, resp
   if (!Number.isSafeInteger(id) || id < 1) {
     return response.status(400).json({ error: "Sortie invalide." });
   }
+  let client;
   try {
-    const organizer = await pool.query(
-      "SELECT organizer_id FROM outings WHERE id = $1",
+    client = await pool.connect();
+    await client.query("BEGIN");
+    const outing = await client.query(
+      "SELECT organizer_id, max_participants FROM outings WHERE id = $1 FOR UPDATE",
       [id]
     );
-    if (organizer.rowCount === 0) {
+    if (outing.rowCount === 0) {
+      await client.query("ROLLBACK");
       return response.status(404).json({ error: "Sortie introuvable." });
     }
-    if (Number(organizer.rows[0].organizer_id) === request.user.id) {
+    if (Number(outing.rows[0].organizer_id) === Number(request.user.id)) {
+      await client.query("ROLLBACK");
       return response.status(409).json({ error: "L’organisateur ne peut pas annuler sa propre participation." });
     }
-    const result = await pool.query(
-      "DELETE FROM outing_participants WHERE outing_id = $1 AND user_id = $2",
+    const participant = await client.query(
+      "DELETE FROM outing_participants WHERE outing_id = $1 AND user_id = $2 RETURNING user_id",
       [id, request.user.id]
     );
-    if (result.rowCount === 0) {
-      return response.status(404).json({ error: "Vous n’êtes pas inscrit à cette sortie." });
+    if (participant.rowCount > 0) {
+      await promoteWaitingList(client, id, outing.rows[0].max_participants);
+    } else {
+      const waiting = await client.query(
+        "DELETE FROM outing_waitlist WHERE outing_id = $1 AND user_id = $2 RETURNING user_id",
+        [id, request.user.id]
+      );
+      if (waiting.rowCount === 0) {
+        await client.query("ROLLBACK");
+        return response.status(404).json({ error: "Vous ne participez pas à cette sortie." });
+      }
     }
+    await client.query("COMMIT");
     return response.status(204).end();
   } catch (error) {
+    if (client) {
+      try {
+        await client.query("ROLLBACK");
+      } catch (rollbackError) {
+        console.error(rollbackError);
+      }
+    }
     return next(error);
+  } finally {
+    client?.release();
   }
 });
 

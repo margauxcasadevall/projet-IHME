@@ -28,7 +28,8 @@ export function ProfileView({ profileId, currentUser, outings, onOpenOuting }) {
     hasParticipant(outing, profile.id) && !isOutingUpcoming(outing)
   ));
   const registered = outings.filter((outing) => (
-    hasParticipant(outing, profile.id)
+    (hasParticipant(outing, profile.id)
+      || (Number(profile.id) === Number(currentUser.id) && outing.user_is_waitlisted))
     && Number(outing.organizer_id) !== Number(profile.id)
     && isOutingUpcoming(outing)
   ));
@@ -56,7 +57,7 @@ export function ProfileView({ profileId, currentUser, outings, onOpenOuting }) {
             return (
               <button key={outing.id} className="profile-outing" onClick={() => onOpenOuting(outing)}>
                 <span className={`mini-icon ${activity.tint}`}><ActivityIcon size={17} /></span>
-                <span className="profile-outing-info"><strong>{outing.title}</strong><small>{activity.label} · {formatDate(outing.event_date, outing.start_time)}</small></span>
+                <span className="profile-outing-info"><strong>{outing.title}</strong><small>{activity.label} · {formatDate(outing.event_date, outing.start_time)}{Number(profile.id) === Number(currentUser.id) && outing.user_is_waitlisted ? ` · En attente (${outing.waitlist_position})` : ""}</small></span>
                 <span className="profile-outing-distance">{Number(outing.distance_km).toLocaleString("fr-FR")} km</span><ArrowRight size={17} />
               </button>
             );
@@ -80,7 +81,7 @@ export function CalendarView({ currentUser, outings, onOpenOuting }) {
   const monthLabel = new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric" }).format(month);
   const matchingOutings = outings.filter((outing) => {
     const date = String(outing.event_date).slice(0, 10);
-    return (scope === "all" || hasParticipant(outing, currentUser.id))
+    return (scope === "all" || hasParticipant(outing, currentUser.id) || outing.user_is_waitlisted)
       && (activityFilter === "all" || outing.activity === activityFilter)
       && (!fromDate || date >= fromDate)
       && (!toDate || date <= toDate);
@@ -131,7 +132,7 @@ export function CalendarView({ currentUser, outings, onOpenOuting }) {
           {visibleOutings.length ? <div className="calendar-event-list">{visibleOutings.map((outing) => {
             const activity = activities[outing.activity] || activities.hiking;
             const ActivityIcon = activity.icon;
-            return <button key={outing.id} className="calendar-event" onClick={() => onOpenOuting(outing)}><span className={`mini-icon ${activity.tint}`}><ActivityIcon size={17} /></span><span className="calendar-event-copy"><strong>{outing.title}</strong><small>{formatDate(outing.event_date, outing.start_time)} · {outing.organizer_name}</small></span><ArrowRight size={16} /></button>;
+            return <button key={outing.id} className="calendar-event" onClick={() => onOpenOuting(outing)}><span className={`mini-icon ${activity.tint}`}><ActivityIcon size={17} /></span><span className="calendar-event-copy"><strong>{outing.title}</strong><small>{formatDate(outing.event_date, outing.start_time)} · {outing.organizer_name}{outing.user_is_waitlisted ? ` · En attente (${outing.waitlist_position})` : ""}</small></span><ArrowRight size={16} /></button>;
           })}</div> : <p className="calendar-empty">Aucune sortie sur cette période. Changez de mois ou ajustez les filtres.</p>}
         </div>
       </div>

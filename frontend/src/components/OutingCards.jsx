@@ -5,6 +5,7 @@ import {
   ArrowUp,
   CalendarDays,
   Check,
+  Clock3,
   Download,
   Link2,
   MapPin,
@@ -14,11 +15,22 @@ import {
   X
 } from "lucide-react";
 import { activities, appBasePath } from "../appData.js";
-import { formatDate } from "../appUtils.js";
+import { formatDate, isOutingUpcoming } from "../appUtils.js";
 
-export function OutingDetails({ outing, currentUserId, onClose, onProfile }) {
+export function OutingDetails({
+  outing,
+  currentUserId,
+  onClose,
+  onProfile,
+  onJoin,
+  onLeave,
+  busy
+}) {
   const activity = activities[outing.activity] || activities.hiking;
   const ActivityIcon = activity.icon;
+  const isOrganizer = Number(outing.organizer_id) === Number(currentUserId);
+  const isFull = Number(outing.participant_count) >= Number(outing.max_participants);
+  const isUpcoming = isOutingUpcoming(outing);
   const hasUploadedGpx = outing.gpx_is_uploaded;
   const gpxHref = hasUploadedGpx ? `${appBasePath}api/outings/${outing.id}/gpx` : outing.gpx_url;
 
@@ -60,7 +72,24 @@ export function OutingDetails({ outing, currentUserId, onClose, onProfile }) {
               ))}
             </div>
           </div>
-          <div className="form-actions"><button className="button button-quiet" onClick={onClose}>Fermer</button></div>
+          {Number(outing.waitlist_count) > 0 && (
+            <div className="details-block">
+              <h3><Clock3 size={16} /> Liste d’attente ({outing.waitlist_count})</h3>
+              {outing.user_is_waitlisted && <p>Vous êtes en position {outing.waitlist_position}.</p>}
+            </div>
+          )}
+          <div className="form-actions">
+            {!isOrganizer && isUpcoming && (outing.user_is_joined ? (
+              <button className="button button-joined" disabled={busy} onClick={onLeave}><Check size={15} /> Inscrit·e</button>
+            ) : outing.user_is_waitlisted ? (
+              <button className="button button-waitlisted" disabled={busy} onClick={onLeave}><Clock3 size={15} /> En attente · {outing.waitlist_position}</button>
+            ) : (
+              <button className="button button-card" disabled={busy} onClick={onJoin}>
+                {isFull ? "Rejoindre la liste d’attente" : "Rejoindre"} <ArrowRight size={15} />
+              </button>
+            ))}
+            <button className="button button-quiet" onClick={onClose}>Fermer</button>
+          </div>
         </div>
       </section>
     </div>
@@ -111,15 +140,19 @@ export function OutingCard({ outing, currentUserId, onJoin, onLeave, onEdit, onD
         )}
         <div className="card-footer">
           <span className={`spots ${full ? "spots-full" : remaining <= 3 ? "spots-low" : ""}`}>
-            <span className="spot-dot" />{full ? "Complet" : `${remaining} place${remaining > 1 ? "s" : ""} disponible${remaining > 1 ? "s" : ""}`}
+            <span className="spot-dot" />{full
+              ? `Complet${Number(outing.waitlist_count) ? ` · ${outing.waitlist_count} en attente` : ""}`
+              : `${remaining} place${remaining > 1 ? "s" : ""} disponible${remaining > 1 ? "s" : ""}`}
           </span>
           <button className="details-button" onClick={onOpen}>Détails</button>
           {isOrganizer ? (
             <button className="button button-delete" disabled={busy} onClick={onDelete}>Annuler la sortie</button>
           ) : outing.user_is_joined ? (
             <button className="button button-joined" disabled={busy} onClick={onLeave}><Check size={15} /> Inscrit·e</button>
+          ) : outing.user_is_waitlisted ? (
+            <button className="button button-waitlisted" disabled={busy} onClick={onLeave}><Clock3 size={15} /> En attente · {outing.waitlist_position}</button>
           ) : (
-            <button className="button button-card" disabled={busy || full} onClick={onJoin}>{full ? "Complet" : "Rejoindre"} <ArrowRight size={15} /></button>
+            <button className="button button-card" disabled={busy} onClick={onJoin}>{full ? "Rejoindre la liste d’attente" : "Rejoindre"} <ArrowRight size={15} /></button>
           )}
         </div>
       </div>
